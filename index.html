@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NESYA — La beauté, simplement connectée</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" data-presets="react">
+import React, { useState, useEffect } from "react";
+
+// ============ MOCK DATA ============
+const CATEGORIES = [
+  { id: 1, name: "Coiffure", icon: "✂️", color: "from-purple-500 to-pink-500" },
+  { id: 2, name: "Tresses", icon: "🧶", color: "from-pink-500 to-rose-500" },
+  { id: 3, name: "Maquillage", icon: "💄", color: "from-rose-500 to-red-500" },
+  { id: 4, name: "Onglerie", icon: "💅", color: "from-indigo-500 to-purple-500" },
+  { id: 5, name: "Soins visage", icon: "✨", color: "from-amber-500 to-orange-500" },
+  { id: 6, name: "Soins corps", icon: "💆", color: "from-teal-500 to-cyan-500" },
+  { id: 7, name: "Spa & Massage", icon: "🌿", color: "from-green-500 to-teal-500" },
+  { id: 8, name: "Barbier", icon: "🪒", color: "from-slate-500 to-gray-600" },
+  { id: 9, name: "Extensions", icon: "👑", color: "from-fuchsia-500 to-purple-500" },
+];
+
+const SERVICES = [
+  { id: 1, title: "Tresses collées avec mèches", provider: "Aïcha Beauty", rating: 4.9, reviews: 127, price: 15000, travelFee: 1000, category: 2, image: "👩🏾‍🦱", duration: 180, city: "Cocody", commune: "Cocody", modes: ["domicile_client", "sur_lieu"], verified: true, desc: "Tresses collées professionnelles avec mèches de qualité supérieure. Travail soigné et rapide." },
+  { id: 2, title: "Maquillage soirée complète", provider: "Glam by Fatou", rating: 5.0, reviews: 89, price: 12000, travelFee: 500, category: 3, image: "💄", duration: 90, city: "Plateau", commune: "Plateau", modes: ["domicile_client", "sur_lieu"], verified: true, desc: "Maquillage professionnel pour soirées, mariages et événements. Teint parfait et longue tenue." },
+  { id: 3, title: "Pose ongles gel", provider: "Nail Art CI", rating: 4.7, reviews: 203, price: 8000, travelFee: 0, category: 4, image: "💅", duration: 120, city: "Yopougon", commune: "Yopougon", modes: ["sur_lieu"], verified: true, desc: "Pose d'ongles en gel avec nail art personnalisée. Plus de 50 couleurs disponibles." },
+  { id: 4, title: "Coupe + brushing femme", provider: "Salon Élégance", rating: 4.8, reviews: 156, price: 6000, travelFee: 0, category: 1, image: "💇🏾‍♀️", duration: 60, city: "Marcory", commune: "Marcory", modes: ["sur_lieu", "domicile_prestataire"], verified: true, desc: "Coupe moderne et brushing professionnel. Conseil personnalisé selon votre visage." },
+  { id: 5, title: "Soins du visage éclat", provider: "Spafitude", rating: 4.9, reviews: 78, price: 10000, travelFee: 0, category: 5, image: "✨", duration: 75, city: "Cocody", commune: "Cocody", modes: ["sur_lieu"], verified: true, desc: "Soin du visage profond: nettoyage, gommage, masque, hydratation. Peau éclatante garantie." },
+  { id: 6, title: "Massage relaxant 1h", provider: "Bien-être CI", rating: 5.0, reviews: 95, price: 14000, travelFee: 1500, category: 7, image: "🌿", duration: 60, city: "Riviera", commune: "Riviera", modes: ["domicile_client", "sur_lieu"], verified: true, desc: "Massage relaxant complet pour détente absolue. Huiles essentielles incluses." },
+  { id: 7, title: "Barbe + coupe homme", provider: "Barber Shop CI", rating: 4.6, reviews: 112, price: 5000, travelFee: 0, category: 8, image: "🪒", duration: 45, city: "Adjamé", commune: "Adjamé", modes: ["sur_lieu"], verified: false, desc: "Taille de barbe et coupe moderne pour homme. Style et précision." },
+  { id: 8, title: "Perruque sur mesure", provider: "Hair Queen", rating: 4.9, reviews: 64, price: 25000, travelFee: 0, category: 9, image: "👑", duration: 120, city: "Treichville", commune: "Treichville", modes: ["sur_lieu", "domicile_prestataire"], verified: true, desc: "Confection de perruques sur mesure, lace frontale et full lace. Qualité premium." },
+];
+
+const PAYMENT_METHODS = [
+  { id: "orange_money", name: "Orange Money", icon: "🟠", color: "bg-orange-500" },
+  { id: "wave", name: "Wave", icon: "🌊", color: "bg-blue-500" },
+  { id: "mtn_money", name: "MTN MoMo", icon: "🟡", color: "bg-yellow-500" },
+  { id: "moov_money", name: "Moov Money", icon: "🔵", color: "bg-sky-600" },
+];
+
+const formatPrice = (p) => new Intl.NumberFormat("fr-FR").format(p) + " FCFA";
+
+// ============ COMPONENTS ============
+
+function Header({ onNav, page, user }) {
+  return (
+    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-purple-100 shadow-sm">
+      <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+        <div className="flex items-center gap-2 cursor-pointer" onClick={() => onNav("home")}>
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center shadow-md shadow-purple-200">
+            <span className="text-white font-black text-xl italic" style={{ fontFamily: "Georgia" }}>N</span>
+          </div>
+          <div>
+            <h1 className="text-xl font-black bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent tracking-tight">NESYA</h1>
+            <p className="text-[10px] text-gray-400 -mt-1 italic">La beauté, simplement connectée</p>
+          </div>
+        </div>
+        <nav className="flex items-center gap-1">
+          {[
+            { id: "home", label: "Accueil" },
+            { id: "bookings", label: "Mes réservations" },
+            { id: "profile", label: "Profil" },
+          ].map((t) => (
+            <button
+              key={t.id}
+              onClick={() => onNav(t.id)}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition ${page === t.id ? "bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-md shadow-purple-200" : "text-gray-600 hover:bg-purple-50"}`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </nav>
+      </div>
+    </header>
+  );
+}
+
+function CategoryGrid({ onSelect }) {
+  return (
+    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+      {CATEGORIES.map((c) => (
+        <button
+          key={c.id}
+          onClick={() => onSelect(c.id)}
+          className="group flex flex-col items-center gap-2 p-4 rounded-2xl bg-white border border-gray-100 hover:shadow-lg hover:border-purple-200 transition-all hover:-translate-y-0.5"
+        >
+          <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${c.color} flex items-center justify-center text-2xl shadow-md group-hover:scale-110 transition-transform`}>
+            {c.icon}
+          </div>
+          <span className="text-xs font-semibold text-gray-700 text-center">{c.name}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function ServiceCard({ service, onBook }) {
+  const cat = CATEGORIES.find((c) => c.id === service.category);
+  const total = service.price + service.travelFee;
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-xl hover:border-purple-200 transition-all hover:-translate-y-1 cursor-pointer" onClick={() => onBook(service)}>
+      <div className="h-36 bg-gradient-to-br from-purple-100 via-pink-50 to-rose-100 flex items-center justify-center text-6xl relative">
+        {service.image}
+        {service.verified && (
+          <span className="absolute top-2 right-2 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+            ✓ Vérifié
+          </span>
+        )}
+      </div>
+      <div className="p-4">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-[10px] font-medium text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">{cat?.name}</span>
+          <span className="text-[10px] text-gray-400">⏱ {service.duration}min</span>
+        </div>
+        <h3 className="font-bold text-gray-800 text-sm leading-tight mb-1">{service.title}</h3>
+        <p className="text-xs text-gray-500 mb-2 truncate">{service.provider} · {service.commune}</p>
+        <div className="flex items-center gap-1 mb-2">
+          <span className="text-amber-400 text-xs">★ {service.rating}</span>
+          <span className="text-[10px] text-gray-400">({service.reviews})</span>
+        </div>
+        <div className="flex items-end justify-between">
+          <div>
+            <p className="text-[10px] text-gray-400">Prix tout compris</p>
+            <p className="font-black text-purple-700">{formatPrice(total)}</p>
+          </div>
+          <button className="bg-gradient-to-r from-purple-600 to-pink-500 text-white text-xs font-semibold px-4 py-2 rounded-full shadow-md shadow-purple-200 hover:shadow-lg transition">
+            Réserver
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BookingModal({ service, onClose, onConfirm }) {
+  const [step, setStep] = useState(1);
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
+  const [mode, setMode] = useState(service.modes[0]);
+  const [address, setAddress] = useState("");
+  const [payment, setPayment] = useState(null);
+  const [confirmed, setConfirmed] = useState(false);
+  const total = service.price + service.travelFee;
+
+  const timeSlots = ["08:00", "09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
+
+  const modeLabels = { domicile_client: "À domicile (chez vous)", domicile_prestataire: "Chez le prestataire", sur_lieu: "Sur place (salon)" };
+
+  const handleConfirm = () => {
+    setConfirmed(true);
+    setStep(4);
+    setTimeout(() => { onConfirm(); }, 200);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={onClose}>
+      <div className="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-4 flex items-center justify-between z-10 rounded-t-3xl">
+          <h2 className="font-bold text-gray-800">{confirmed ? "✅ Réservation confirmée" : "Réserver"}</h2>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500">✕</button>
+        </div>
+
+        {/* Steps indicator */}
+        {!confirmed && (
+          <div className="flex items-center gap-1 px-5 py-3">
+            {[1, 2, 3].map((s) => (
+              <div key={s} className={`h-1.5 flex-1 rounded-full ${step >= s ? "bg-gradient-to-r from-purple-600 to-pink-500" : "bg-gray-200"}`} />
+            ))}
+          </div>
+        )}
+
+        <div className="p-5">
+          {confirmed ? (
+            <div className="text-center py-8">
+              <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center text-4xl mx-auto mb-4">✅</div>
+              <h3 className="text-xl font-black text-gray-800 mb-2">Réservation confirmée !</h3>
+              <p className="text-sm text-gray-500 mb-4">Référence: NESYA-{Math.random().toString(36).substring(2, 8).toUpperCase()}</p>
+              <div className="bg-purple-50 rounded-2xl p-4 text-left text-sm space-y-2">
+                <div className="flex justify-between"><span className="text-gray-500">Service</span><span className="font-semibold">{service.title}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Date</span><span className="font-semibold">{date} à {time}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Lieu</span><span className="font-semibold">{modeLabels[mode]}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Paiement</span><span className="font-semibold">Après le service</span></div>
+                <div className="flex justify-between border-t border-purple-200 pt-2"><span className="text-gray-500">Total</span><span className="font-black text-purple-700">{formatPrice(total)}</span></div>
+              </div>
+              <p className="text-xs text-amber-600 bg-amber-50 rounded-xl p-3 mt-4">💡 Le paiement se fait <strong>après</strong> la prestation du service.</p>
+              <button onClick={onClose} className="mt-6 w-full bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold py-3 rounded-2xl">Terminer</button>
+            </div>
+          ) : step === 1 ? (
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-semibold text-gray-700 block mb-2">📅 Date du rendez-vous</label>
+                <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-purple-400" min={new Date().toISOString().split("T")[0]} />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-gray-700 block mb-2">🕐 Créneau horaire</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {timeSlots.map((t) => (
+                    <button key={t} onClick={() => setTime(t)} className={`py-2 rounded-xl text-sm font-medium transition ${time === t ? "bg-gradient-to-r from-purple-600 to-pink-500 text-white" : "bg-gray-50 text-gray-600 hover:bg-purple-50"}`}>{t}</button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-gray-700 block mb-2">📍 Mode de prestation</label>
+                <div className="space-y-2">
+                  {service.modes.map((m) => (
+                    <button key={m} onClick={() => setMode(m)} className={`w-full text-left px-4 py-3 rounded-xl border text-sm transition ${mode === m ? "border-purple-400 bg-purple-50 font-semibold text-purple-700" : "border-gray-200 text-gray-600 hover:border-purple-200"}`}>
+                      {modeLabels[m]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {mode === "domicile_client" && (
+                <div>
+                  <label className="text-sm font-semibold text-gray-700 block mb-2">🏠 Votre adresse</label>
+                  <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Ex: Cocody, Riviera Palmeraie..." className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-purple-400" />
+                </div>
+              )}
+              <button disabled={!date || !time} onClick={() => setStep(2)} className="w-full bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold py-3 rounded-2xl disabled:opacity-40">Continuer</button>
+            </div>
+          ) : step === 2 ? (
+            <div className="space-y-4">
+              <div className="bg-purple-50 rounded-2xl p-4">
+                <h3 className="font-bold text-gray-800 mb-3">📋 Récapitulatif</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between"><span className="text-gray-500">Service</span><span className="font-medium">{service.title}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">Prestataire</span><span className="font-medium">{service.provider}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">Date</span><span className="font-medium">{date} à {time}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">Lieu</span><span className="font-medium">{modeLabels[mode]}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">Prix de base</span><span className="font-medium">{formatPrice(service.price)}</span></div>
+                  {service.travelFee > 0 && <div className="flex justify-between"><span className="text-gray-500">Frais de déplacement</span><span className="font-medium">{formatPrice(service.travelFee)}</span></div>}
+                  <div className="flex justify-between border-t border-purple-200 pt-2 text-base"><span className="font-bold">Total</span><span className="font-black text-purple-700">{formatPrice(total)}</span></div>
+                </div>
+              </div>
+              <div className="bg-amber-50 rounded-xl p-3 text-xs text-amber-700">
+                💡 Chez NESYA, vous payez <strong>après</strong> la prestation. Le prestataire terminera le service puis vous recevrez une demande de paiement.
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => setStep(1)} className="flex-1 border border-gray-200 text-gray-600 font-semibold py-3 rounded-2xl">Retour</button>
+                <button onClick={() => setStep(3)} className="flex-1 bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold py-3 rounded-2xl">Continuer</button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <h3 className="font-bold text-gray-800">Choisissez votre mode de paiement</h3>
+              <p className="text-xs text-gray-500">Le paiement sera initié après la prestation du service.</p>
+              <div className="space-y-2">
+                {PAYMENT_METHODS.map((m) => (
+                  <button key={m.id} onClick={() => setPayment(m.id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition ${payment === m.id ? "border-purple-400 bg-purple-50" : "border-gray-200 hover:border-purple-200"}`}>
+                    <span className="text-2xl">{m.icon}</span>
+                    <span className="font-medium text-gray-700 text-sm">{m.name}</span>
+                    {payment === m.id && <span className="ml-auto text-purple-600">✓</span>}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => setStep(2)} className="flex-1 border border-gray-200 text-gray-600 font-semibold py-3 rounded-2xl">Retour</button>
+                <button disabled={!payment} onClick={handleConfirm} className="flex-1 bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold py-3 rounded-2xl disabled:opacity-40">Confirmer</button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BookingsList({ bookings }) {
+  if (bookings.length === 0) {
+    return (
+      <div className="text-center py-20">
+        <div className="text-6xl mb-4">📅</div>
+        <p className="text-gray-400 font-medium">Aucune réservation pour le moment</p>
+      </div>
+    );
+  }
+  const statusColors = { en_attente: "bg-yellow-100 text-yellow-700", confirme: "bg-blue-100 text-blue-700", termine: "bg-purple-100 text-purple-700", paye: "bg-green-100 text-green-700", annule: "bg-red-100 text-red-700" };
+  const statusLabels = { en_attente: "En attente", confirme: "Confirmé", termine: "Terminé", paye: "Payé", annule: "Annulé" };
+  return (
+    <div className="space-y-3">
+      {bookings.map((b, i) => (
+        <div key={i} className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center text-3xl">{b.image}</div>
+          <div className="flex-1">
+            <h3 className="font-bold text-gray-800 text-sm">{b.title}</h3>
+            <p className="text-xs text-gray-500">{b.provider}</p>
+            <p className="text-xs text-gray-400">{b.date} · {b.time}</p>
+          </div>
+          <div className="text-right">
+            <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${statusColors[b.status] || "bg-gray-100 text-gray-600"}`}>{statusLabels[b.status] || b.status}</span>
+            <p className="font-black text-purple-700 text-sm mt-1">{formatPrice(b.total)}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ProfilePage({ user }) {
+  return (
+    <div className="max-w-lg mx-auto space-y-4">
+      <div className="bg-white rounded-3xl p-6 text-center border border-gray-100">
+        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-4xl text-white font-black mx-auto mb-4 shadow-lg shadow-purple-200">F</div>
+        <h2 className="text-xl font-black text-gray-800">{user?.name || "Freezer Freezer"}</h2>
+        <p className="text-sm text-gray-400">{user?.phone || "+225 07 00 00 00 01"}</p>
+        <span className="inline-block mt-2 bg-green-50 text-green-600 text-xs font-bold px-3 py-1 rounded-full">✓ Téléphone vérifié</span>
+      </div>
+      <div className="bg-white rounded-2xl p-4 border border-gray-100 space-y-3">
+        {[
+          { icon: "🔒", label: "Sécurité & 2FA", val: "Configurer" },
+          { icon: "📍", label: "Mes adresses", val: "2 adresses" },
+          { icon: "💳", label: "Moyens de paiement", val: "4 méthodes" },
+          { icon: "⭐", label: "Mes avis", val: "0 avis" },
+          { icon: "❤️", label: "Mes favoris", val: "0 favoris" },
+          { icon: "🔔", label: "Notifications", val: "3 nouvelles" },
+          { icon: "❓", label: "Aide & support", val: "" },
+          { icon: "📋", label: "Conditions d'utilisation", val: "" },
+        ].map((item, i) => (
+          <button key={i} className="w-full flex items-center gap-3 py-2 hover:bg-purple-50 rounded-xl px-2 transition text-left">
+            <span className="text-xl">{item.icon}</span>
+            <span className="text-sm font-medium text-gray-700 flex-1">{item.label}</span>
+            {item.val && <span className="text-xs text-gray-400">{item.val}</span>}
+            <span className="text-gray-300">›</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ============ MAIN APP ============
+
+function App() {
+  const [page, setPage] = useState("home");
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [bookingService, setBookingService] = useState(null);
+  const [bookings, setBookings] = useState([
+    { title: "Tresses collées avec mèches", provider: "Aïcha Beauty", date: "2026-09-05", time: "10:00", total: 16000, status: "confirme", image: "👩🏾‍🦱" },
+    { title: "Maquillage soirée complète", provider: "Glam by Fatou", date: "2026-08-28", time: "15:00", total: 12500, status: "paye", image: "💄" },
+  ]);
+
+  const navigate = (p) => { setPage(p); setSelectedCategory(null); };
+
+  const filteredServices = SERVICES.filter((s) => {
+    if (selectedCategory && s.category !== selectedCategory) return false;
+    if (searchQuery && !s.title.toLowerCase().includes(searchQuery.toLowerCase()) && !s.provider.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    return true;
+  });
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-pink-50">
+      <Header onNav={navigate} page={page} user={{ name: "Freezer Freezer" }} />
+
+      <main className="max-w-5xl mx-auto px-4 py-6">
+        {page === "home" && (
+          <>
+            {/* Hero */}
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-600 via-purple-500 to-pink-500 p-8 mb-6 text-white">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-12 translate-x-12" />
+              <div className="absolute bottom-0 left-0 w-32 h-32 bg-pink-300/20 rounded-full translate-y-12 -translate-x-8" />
+              <div className="relative z-10">
+                <p className="text-amber-300 font-semibold text-sm mb-1">✨ Réservez votre rendez-vous beauté</p>
+                <h2 className="text-3xl font-black mb-2 leading-tight">La beauté,<br/>simplement connectée</h2>
+                <p className="text-purple-100 text-sm mb-4 max-w-md">Coiffure, tresses, maquillage, ongles... Trouvez les meilleurs professionnels près de chez vous à Abidjan.</p>
+                <div className="flex gap-2">
+                  <button onClick={() => document.getElementById("search")?.scrollIntoView({ behavior: "smooth" })} className="bg-white text-purple-700 font-semibold px-5 py-2.5 rounded-full text-sm shadow-lg hover:shadow-xl transition">
+                    🔍 Rechercher
+                  </button>
+                  <button className="bg-white/20 backdrop-blur text-white font-semibold px-5 py-2.5 rounded-full text-sm border border-white/30 hover:bg-white/30 transition">
+                    📖 Comment ça marche
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Search */}
+            <div className="mb-6" id="search">
+              <input type="text" placeholder="🔍 Rechercher un service, un professionnel..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full border border-gray-200 rounded-2xl px-5 py-3.5 text-sm focus:outline-none focus:border-purple-400 bg-white shadow-sm" />
+            </div>
+
+            {/* Categories */}
+            {!selectedCategory && !searchQuery && (
+              <div className="mb-6">
+                <h3 className="text-lg font-black text-gray-800 mb-3">Catégories</h3>
+                <CategoryGrid onSelect={(id) => setSelectedCategory(id)} />
+              </div>
+            )}
+
+            {/* Services */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-lg font-black text-gray-800">
+                  {selectedCategory ? `${CATEGORIES.find((c) => c.id === selectedCategory)?.name} — Services` : "Services populaires"}
+                </h3>
+                {selectedCategory && <button onClick={() => setSelectedCategory(null)} className="text-sm text-purple-600 font-medium">← Toutes les catégories</button>}
+              </div>
+              {filteredServices.length === 0 ? (
+                <div className="text-center py-16 text-gray-400">
+                  <div className="text-5xl mb-3">🔍</div>
+                  <p>Aucun service trouvé</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {filteredServices.map((s) => (
+                    <ServiceCard key={s.id} service={s} onBook={(svc) => setBookingService(svc)} />
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {page === "bookings" && <BookingsList bookings={bookings} />}
+        {page === "profile" && <ProfilePage user={{ name: "Freezer Freezer", phone: "+225 07 00 00 00 01" }} />}
+      </main>
+
+      {/* Footer */}
+      <footer className="border-t border-purple-100 bg-white py-6 mt-8">
+        <div className="max-w-5xl mx-auto px-4 text-center">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center">
+              <span className="text-white font-black text-sm" style={{ fontFamily: "Georgia" }}>N</span>
+            </div>
+            <span className="font-black text-gray-700">NESYA</span>
+          </div>
+          <p className="text-xs text-gray-400">La beauté, simplement connectée · Côte d'Ivoire 🇨🇮</p>
+          <p className="text-[10px] text-gray-300 mt-2">Paiement après prestation · Vérification d'identité · Paiement Mobile Money</p>
+        </div>
+      </footer>
+
+      {/* Booking Modal */}
+      {bookingService && (
+        <BookingModal
+          service={bookingService}
+          onClose={() => setBookingService(null)}
+          onConfirm={() => {
+            setBookings((prev) => [
+              { title: bookingService.title, provider: bookingService.provider, date: "2026-09-10", time: "10:00", total: bookingService.price + bookingService.travelFee, status: "en_attente", image: bookingService.image },
+              ...prev,
+            ]);
+            setBookingService(null);
+            navigate("bookings");
+          }}
+        />
+      )}
+    </div>
+  );
+}
+  </script>
+  <script type="text/babel">
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(React.createElement(App));
+  </script>
+</body>
+</html>
