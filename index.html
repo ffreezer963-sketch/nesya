@@ -1,463 +1,1288 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NESYA — La beauté, simplement connectée</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+<title>NESYA - La beaute, simplement connectee</title>
+<meta name="description" content="NESYA - Plateforme de reservation de services de beaute en Cote d'Ivoire" />
+<script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  *{font-family:'Poppins',sans-serif;}
+  body{margin:0;}
+  .gradient-brand{background:linear-gradient(135deg,#6B21A8 0%,#9333EA 40%,#EC4899 100%);}
+  .gradient-text{background:linear-gradient(135deg,#6B21A8,#EC4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+  .btn-primary{background:linear-gradient(135deg,#6B21A8,#EC4899);color:#fff;border:none;cursor:pointer;transition:all .2s;}
+  .btn-primary:hover{opacity:.9;transform:translateY(-1px);box-shadow:0 4px 15px rgba(236,72,153,.3);}
+  .btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none;}
+  .fade-in{animation:fadeIn .3s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  ::-webkit-scrollbar{width:6px;height:6px;}
+  ::-webkit-scrollbar-thumb{background:#d4d4d4;border-radius:3px;}
+  input:focus,select:focus,textarea:focus{border-color:#9333EA;box-shadow:0 0 0 3px rgba(147,51,234,.1);outline:none;}
+</style>
 </head>
 <body>
-  <div id="root"></div>
-  <script type="text/babel" data-presets="react">
-import React, { useState, useEffect } from "react";
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useMemo, useCallback } = React;
 
-// ============ MOCK DATA ============
+/* ====== ROUTER ====== */
+function useRouter() {
+  const [route, setRoute] = useState(() => window.location.hash.slice(1) || '/');
+  useEffect(() => {
+    const h = () => { setRoute(window.location.hash.slice(1) || '/'); window.scrollTo(0, 0); };
+    window.addEventListener('hashchange', h);
+    return () => window.removeEventListener('hashchange', h);
+  }, []);
+  const navigate = useCallback((r) => { window.location.hash = r; }, []);
+  return { route, navigate };
+}
+
+/* ====== LOGO ====== */
+function Logo({ size = 40 }) {
+  return (
+    <div style={{ width: size, height: size, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <svg width={size} height={size} viewBox="0 0 100 100">
+        <defs>
+          <linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#6B21A8" />
+            <stop offset="50%" stopColor="#9333EA" />
+            <stop offset="100%" stopColor="#EC4899" />
+          </linearGradient>
+          <linearGradient id="lg2" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#D4AF37" />
+            <stop offset="100%" stopColor="#FFD700" />
+          </linearGradient>
+        </defs>
+        <path d="M20 80 L20 20 L35 20 L65 55 L65 20 L80 20 L80 80 L65 80 L35 45 L35 80 Z" fill="url(#lg)" />
+        <path d="M50 10 Q55 20 65 18 Q60 25 62 35 Q55 30 50 35 Q52 25 45 22 Q52 18 50 10" fill="url(#lg2)" opacity="0.9" />
+        <circle cx="68" cy="12" r="3" fill="#D4AF37" />
+      </svg>
+    </div>
+  );
+}
+
+/* ====== UI COMPONENTS ====== */
+function Button({ children, onClick, variant = 'primary', className = '', size = 'md', disabled, ...props }) {
+  const sizes = { sm: 'px-3 py-1.5 text-sm', md: 'px-5 py-2.5 text-sm', lg: 'px-6 py-3 text-bottome' };
+  const variants = {
+    primary: 'btn-primary',
+    outline: 'border-2 border-purple-400 text-purple-600 hover:bg-purple-50 bg-white',
+    ghost: 'text-purple-600 hover:bg-purple-50 bg-transparent border-none cursor-pointer',
+    gold: 'bg-yellow-500 text-white hover:bg-yellow-600 border-none cursor-pointer',
+    danger: 'bg-red-500 text-white hover:bg-red-600 border-none cursor-pointer',
+    success: 'bg-green-500 text-white hover:bg-green-600 border-none cursor-pointer'
+  };
+  return (
+    <button onClick={onClick} disabled={disabled}
+      className={`${sizes[size]} ${variants[variant]} rounded-xl font-semibold transition-all ${className}`}
+      {...props}>{children}</button>
+  );
+}
+
+function Card({ children, className = '', onClick }) {
+  return <div onClick={onClick} className={`bg-white rounded-2xl shadow-sm border border-gray-100 p-4 transition-all ${className}`}>{children}</div>;
+}
+
+function Badge({ children, color = 'purple' }) {
+  const colors = {
+    purple: 'bg-purple-100 text-purple-700', pink: 'bg-pink-100 text-pink-700',
+    green: 'bg-green-100 text-green-700', yellow: 'bg-yellow-100 text-yellow-700',
+    red: 'bg-red-100 text-red-700', blue: 'bg-blue-100 text-blue-700', gray: 'bg-gray-100 text-gray-600'
+  };
+  return <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${colors[color]}`}>{children}</span>;
+}
+
+function Input({ label, ...props }) {
+  return (
+    <div className="mb-3">
+      {label && <label className="block text-sm font-medium text-gray-600 mb-1">{label}</label>}
+      <input className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm transition-all" {...props} />
+    </div>
+  );
+}
+
+function Select({ label, children, ...props }) {
+  return (
+    <div className="mb-3">
+      {label && <label className="block text-sm font-medium text-gray-600 mb-1">{label}</label>}
+      <select className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white" {...props}>{children}</select>
+    </div>
+  );
+}
+
+function Modal({ open, onClose, title, children }) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 fade-in" onClick={onClose}>
+      <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full sm:max-w-md max-h-[85vh] overflow-y-auto p-5" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-gray-800">{title}</h3>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full text-gray-500 text-xl">&times;</button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function StarRating({ rating, size = 14 }) {
+  return (
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map(i => (
+        <svg key={i} width={size} height={size} viewBox="0 0 24 24" fill={i <= Math.round(rating) ? '#D4AF37' : '#E5E7EB'}>
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+        </svg>
+      ))}
+    </div>
+  );
+}
+
+function Avatar({ name, size = 44 }) {
+  const initials = name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+  const colors = ['#6B21A8', '#9333EA', '#EC4899', '#D4AF37', '#0891B2', '#059669'];
+  const color = colors[name.charCodeAt(0) % colors.length];
+  return (
+    <div style={{ width: size, height: size, background: color, fontSize: size * 0.4 }}
+      className="rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">{initials}</div>
+  );
+}
+
+function EmptyState({ icon, title, sub }) {
+  return (
+    <div className="text-center py-12">
+      <div className="text-5xl mb-3 opacity-30">{icon}</div>
+      <p className="text-gray-500 font-medium">{title}</p>
+      {sub && <p className="text-gray-400 text-sm mt-1">{sub}</p>}
+    </div>
+  );
+}
+
+/* ====== MOCK DATA ====== */
 const CATEGORIES = [
-  { id: 1, name: "Coiffure", icon: "✂️", color: "from-purple-500 to-pink-500" },
-  { id: 2, name: "Tresses", icon: "🧶", color: "from-pink-500 to-rose-500" },
-  { id: 3, name: "Maquillage", icon: "💄", color: "from-rose-500 to-red-500" },
-  { id: 4, name: "Onglerie", icon: "💅", color: "from-indigo-500 to-purple-500" },
-  { id: 5, name: "Soins visage", icon: "✨", color: "from-amber-500 to-orange-500" },
-  { id: 6, name: "Soins corps", icon: "💆", color: "from-teal-500 to-cyan-500" },
-  { id: 7, name: "Spa & Massage", icon: "🌿", color: "from-green-500 to-teal-500" },
-  { id: 8, name: "Barbier", icon: "🪒", color: "from-slate-500 to-gray-600" },
-  { id: 9, name: "Extensions", icon: "👑", color: "from-fuchsia-500 to-purple-500" },
+  { id: 'manucure', name: 'Manucure', icon: '\uD83D\uDC85' },
+  { id: 'pedicure', name: 'Pedicure', icon: '\uD83E\uDDB6' },
+  { id: 'coiffure', name: 'Coiffure', icon: '\uD83D\uDC87' },
+  { id: 'maquillage', name: 'Maquillage', icon: '\uD83D\uDC84' },
+  { id: 'soins', name: 'Soins visage', icon: '\u2728' },
+  { id: 'epilation', name: 'Epilation', icon: '\uD83C\uDF38' },
+  { id: 'cils', name: 'Cils & Sourcils', icon: '\uD83D\uDC41' },
+  { id: 'massage', name: 'Massage & Spa', icon: '\uD83D\uDC86' }
 ];
 
-const SERVICES = [
-  { id: 1, title: "Tresses collées avec mèches", provider: "Aïcha Beauty", rating: 4.9, reviews: 127, price: 15000, travelFee: 1000, category: 2, image: "👩🏾‍🦱", duration: 180, city: "Cocody", commune: "Cocody", modes: ["domicile_client", "sur_lieu"], verified: true, desc: "Tresses collées professionnelles avec mèches de qualité supérieure. Travail soigné et rapide." },
-  { id: 2, title: "Maquillage soirée complète", provider: "Glam by Fatou", rating: 5.0, reviews: 89, price: 12000, travelFee: 500, category: 3, image: "💄", duration: 90, city: "Plateau", commune: "Plateau", modes: ["domicile_client", "sur_lieu"], verified: true, desc: "Maquillage professionnel pour soirées, mariages et événements. Teint parfait et longue tenue." },
-  { id: 3, title: "Pose ongles gel", provider: "Nail Art CI", rating: 4.7, reviews: 203, price: 8000, travelFee: 0, category: 4, image: "💅", duration: 120, city: "Yopougon", commune: "Yopougon", modes: ["sur_lieu"], verified: true, desc: "Pose d'ongles en gel avec nail art personnalisée. Plus de 50 couleurs disponibles." },
-  { id: 4, title: "Coupe + brushing femme", provider: "Salon Élégance", rating: 4.8, reviews: 156, price: 6000, travelFee: 0, category: 1, image: "💇🏾‍♀️", duration: 60, city: "Marcory", commune: "Marcory", modes: ["sur_lieu", "domicile_prestataire"], verified: true, desc: "Coupe moderne et brushing professionnel. Conseil personnalisé selon votre visage." },
-  { id: 5, title: "Soins du visage éclat", provider: "Spafitude", rating: 4.9, reviews: 78, price: 10000, travelFee: 0, category: 5, image: "✨", duration: 75, city: "Cocody", commune: "Cocody", modes: ["sur_lieu"], verified: true, desc: "Soin du visage profond: nettoyage, gommage, masque, hydratation. Peau éclatante garantie." },
-  { id: 6, title: "Massage relaxant 1h", provider: "Bien-être CI", rating: 5.0, reviews: 95, price: 14000, travelFee: 1500, category: 7, image: "🌿", duration: 60, city: "Riviera", commune: "Riviera", modes: ["domicile_client", "sur_lieu"], verified: true, desc: "Massage relaxant complet pour détente absolue. Huiles essentielles incluses." },
-  { id: 7, title: "Barbe + coupe homme", provider: "Barber Shop CI", rating: 4.6, reviews: 112, price: 5000, travelFee: 0, category: 8, image: "🪒", duration: 45, city: "Adjamé", commune: "Adjamé", modes: ["sur_lieu"], verified: false, desc: "Taille de barbe et coupe moderne pour homme. Style et précision." },
-  { id: 8, title: "Perruque sur mesure", provider: "Hair Queen", rating: 4.9, reviews: 64, price: 25000, travelFee: 0, category: 9, image: "👑", duration: 120, city: "Treichville", commune: "Treichville", modes: ["sur_lieu", "domicile_prestataire"], verified: true, desc: "Confection de perruques sur mesure, lace frontale et full lace. Qualité premium." },
+const PROVIDERS = [
+  { id: 'p1', name: 'Awa Kone', category: 'manucure', rating: 4.9, reviews: 127, location: 'Cocody, Abidjan', distance: '2.5 km', bio: 'Prothesiste ongulaire certifiee, 8 ans d experience. Specialiste nail art et poses gel.', price: 5000, services: ['Pose gel', 'Nail art', 'French manucure', 'Spa des mains'], mode: ['domicile', 'atelier'], verified: true },
+  { id: 'p2', name: 'Fatou Diarra', category: 'coiffure', rating: 4.8, reviews: 89, location: 'Plateau, Abidjan', distance: '5 km', bio: 'Coiffeuse styliste professionnelle. Tresses, locks, lissage et soins capillaires.', price: 15000, services: ['Tresses', 'Lissage', 'Locks', 'Soins capillaires'], mode: ['atelier'], verified: true },
+  { id: 'p3', name: 'Mariam Traore', category: 'maquillage', rating: 5.0, reviews: 56, location: 'Marcory, Abidjan', distance: '7 km', bio: 'Makeup artiste professionnelle pour mariees et evenements. Plus de 10 ans d experience.', price: 25000, services: ['Maquillage mariee', 'Maquillage soiree', 'Maquillage quotidien', 'Essai maquillage'], mode: ['domicile', 'atelier'], verified: true },
+  { id: 'p4', name: 'Grace Bamba', category: 'soins', rating: 4.7, reviews: 73, location: 'Yopougon, Abidjan', distance: '12 km', bio: 'Estheticienne specialisee en soins du visage et du corps. Produits naturels.', price: 8000, services: ['Soin visage hydratant', 'Soin anti-taches', 'Gommage corps', 'Masque eclaircissant'], mode: ['atelier'], verified: true },
+  { id: 'p5', name: 'Estelle Kouassi', category: 'pedicure', rating: 4.6, reviews: 42, location: 'Treichville, Abidjan', distance: '4 km', bio: 'Pedicure-prothese depuis 5 ans. Spa des pieds et soins complets.', price: 6000, services: ['Spa des pieds', 'Pose vernis', 'French pedicure', 'Soin des callosites'], mode: ['atelier'], verified: true },
+  { id: 'p6', name: 'Aminata Cisse', category: 'cils', rating: 4.9, reviews: 38, location: 'Cocody, Abidjan', distance: '3 km', bio: 'Ciliste professionnelle. Extensions, lifting et brow lift.', price: 7000, services: ['Extension cils', 'Lifting cils', 'Brow lift', 'Teinture sourcils'], mode: ['domicile', 'atelier'], verified: true },
+  { id: 'p7', name: 'Nadine Yao', category: 'epilation', rating: 4.5, reviews: 61, location: 'Adjame, Abidjan', distance: '8 km', bio: 'Estheticienne specialisee en epilation. Cire tiede et froide.', price: 4000, services: ['Epilation aisselles', 'Epilation demi-jambes', 'Epilation jambes completes', 'Epilation levres'], mode: ['atelier'], verified: false },
+  { id: 'p8', name: 'Rachelle NGuessan', category: 'massage', rating: 5.0, reviews: 95, location: 'Plateau, Abidjan', distance: '6 km', bio: 'Massageuse therapeutique certifiee. Massage relaxant, drainant et californien.', price: 12000, services: ['Massage relaxant', 'Massage drainant', 'Massage californien', 'Massage pierre chaude'], mode: ['domicile', 'atelier'], verified: true }
+];
+
+const TIME_SLOTS = ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
+
+const PROMO_CODES = [
+  { code: 'NESYA10', type: 'percent', value: 10, description: '10% sur votre premiere reservation', active: true, uses: 0, maxUses: 100, expires: '2026-12-31' },
+  { code: 'BEAUTE50', type: 'fixed', value: 2000, description: '2000 FCFA de reduction', active: true, uses: 12, maxUses: 50, expires: '2026-10-31' },
+  { code: 'VIP20', type: 'percent', value: 20, description: '20% pour les membres VIP', active: false, uses: 45, maxUses: 100, expires: '2026-09-15' }
 ];
 
 const PAYMENT_METHODS = [
-  { id: "orange_money", name: "Orange Money", icon: "🟠", color: "bg-orange-500" },
-  { id: "wave", name: "Wave", icon: "🌊", color: "bg-blue-500" },
-  { id: "mtn_money", name: "MTN MoMo", icon: "🟡", color: "bg-yellow-500" },
-  { id: "moov_money", name: "Moov Money", icon: "🔵", color: "bg-sky-600" },
+  { id: 'wave', name: 'Wave', color: '#1DC8FF', icon: 'W' },
+  { id: 'orange', name: 'Orange Money', color: '#FF6600', icon: 'O' },
+  { id: 'mtn', name: 'MTN Money', color: '#FFCC00', icon: 'M' },
+  { id: 'moov', name: 'Moov Money', color: '#0066CC', icon: 'V' },
+  { id: 'bank', name: 'Compte bancaire', color: '#333333', icon: 'B' }
 ];
 
-const formatPrice = (p) => new Intl.NumberFormat("fr-FR").format(p) + " FCFA";
+const MOCK_BOOKINGS = [
+  { id: 'BK-2026-001', provider: 'Awa Kone', service: 'Pose gel', date: '2026-09-05', time: '14:00', location: 'A domicile - Cocody', status: 'confirmee', price: 5000, payment: 'en_attente', promo: null },
+  { id: 'BK-2026-002', provider: 'Mariam Traore', service: 'Maquillage mariee', date: '2026-08-28', time: '08:00', location: 'En atelier - Marcory', status: 'realisee', price: 25000, payment: 'payee', promo: 'NESYA10' },
+  { id: 'BK-2026-003', provider: 'Fatou Diarra', service: 'Tresses', date: '2026-08-15', time: '10:00', location: 'En atelier - Plateau', status: 'annulee', price: 15000, payment: 'echec', promo: null }
+];
 
-// ============ COMPONENTS ============
+const STATS = { totalClients: 1247, totalProviders: 89, totalBookings: 3421, totalRevenue: 8450000, activeSubscriptions: 67, pendingPayments: 12 };
 
-function Header({ onNav, page, user }) {
+/* ====== NAVBAR ====== */
+function Navbar({ route, navigate, currentUser, setCurrentUser }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const navItems = [
+    { label: 'Accueil', path: '/' },
+    { label: 'Services', path: '/services' },
+    { label: 'Mes reservations', path: '/bookings' },
+    { label: 'Prestataires', path: '/providers' }
+  ];
+  if (currentUser && currentUser.role === 'provider') navItems.push({ label: 'Mon espace', path: '/provider-dashboard' });
+  if (currentUser && currentUser.role === 'admin') navItems.push({ label: 'Admin', path: '/admin' });
+
   return (
-    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-purple-100 shadow-sm">
-      <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-2 cursor-pointer" onClick={() => onNav("home")}>
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center shadow-md shadow-purple-200">
-            <span className="text-white font-black text-xl italic" style={{ fontFamily: "Georgia" }}>N</span>
-          </div>
+    <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-gray-100">
+      <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+        <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
+          <Logo size={36} />
           <div>
-            <h1 className="text-xl font-black bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent tracking-tight">NESYA</h1>
-            <p className="text-[10px] text-gray-400 -mt-1 italic">La beauté, simplement connectée</p>
+            <span className="text-xl font-extrabold gradient-text leading-none">NESYA</span>
+            <p className="text-[10px] text-gray-400 leading-tight">La beaute, simplement connectee</p>
           </div>
         </div>
-        <nav className="flex items-center gap-1">
-          {[
-            { id: "home", label: "Accueil" },
-            { id: "bookings", label: "Mes réservations" },
-            { id: "profile", label: "Profil" },
-          ].map((t) => (
-            <button
-              key={t.id}
-              onClick={() => onNav(t.id)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition ${page === t.id ? "bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-md shadow-purple-200" : "text-gray-600 hover:bg-purple-50"}`}
-            >
-              {t.label}
+        <nav className="hidden md:flex items-center gap-6">
+          {navItems.map(item => (
+            <button key={item.path} onClick={() => navigate(item.path)}
+              className={`text-sm font-medium transition ${route === item.path ? 'text-purple-600 font-semibold' : 'text-gray-600 hover:text-purple-600'}`}>
+              {item.label}
             </button>
           ))}
+          {currentUser ? (
+            <div className="flex items-center gap-3">
+              <button onClick={() => navigate('/profile')} className="flex items-center gap-2">
+                <Avatar name={currentUser.name} size={32} />
+                <span className="text-sm font-medium text-gray-700">{currentUser.name.split(' ')[0]}</span>
+              </button>
+              <Button size="sm" variant="ghost" onClick={() => { setCurrentUser(null); navigate('/'); }}>Deconnexion</Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="ghost" onClick={() => navigate('/login')}>Connexion</Button>
+              <Button size="sm" onClick={() => navigate('/register')}>Inscription</Button>
+            </div>
+          )}
         </nav>
+        <button className="md:hidden p-2" onClick={() => setMenuOpen(!menuOpen)}>
+          <span className="text-2xl">{menuOpen ? '\u00D7' : '\u2630'}</span>
+        </button>
       </div>
+      {menuOpen && (
+        <div className="md:hidden bg-white border-t border-gray-100 p-4 space-y-2">
+          {navItems.map(item => (
+            <button key={item.path} onClick={() => { navigate(item.path); setMenuOpen(false); }}
+              className={`block w-full text-left py-2 ${route === item.path ? 'text-purple-600 font-semibold' : 'text-gray-600'}`}>
+              {item.label}
+            </button>
+          ))}
+          {currentUser ? (
+            <>
+              <button onClick={() => { navigate('/profile'); setMenuOpen(false); }} className="block w-full text-left py-2 text-gray-600">Mon profil</button>
+              <button onClick={() => { setCurrentUser(null); navigate('/'); setMenuOpen(false); }} className="block w-full text-left py-2 text-red-500">Deconnexion</button>
+            </>
+          ) : (
+            <>
+              <button onClick={() => { navigate('/login'); setMenuOpen(false); }} className="block w-full text-left py-2 text-purple-600">Connexion</button>
+              <button onClick={() => { navigate('/register'); setMenuOpen(false); }} className="block w-full text-left py-2 text-purple-600">Inscription</button>
+            </>
+          )}
+        </div>
+      )}
     </header>
   );
 }
 
-function CategoryGrid({ onSelect }) {
+/* ====== FOOTER ====== */
+function Footer({ navigate }) {
   return (
-    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-      {CATEGORIES.map((c) => (
-        <button
-          key={c.id}
-          onClick={() => onSelect(c.id)}
-          className="group flex flex-col items-center gap-2 p-4 rounded-2xl bg-white border border-gray-100 hover:shadow-lg hover:border-purple-200 transition-all hover:-translate-y-0.5"
-        >
-          <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${c.color} flex items-center justify-center text-2xl shadow-md group-hover:scale-110 transition-transform`}>
-            {c.icon}
+    <footer className="bg-gray-900 text-gray-300 mt-12">
+      <div className="max-w-6xl mx-auto px-4 py-12">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
+          <div className="col-span-2">
+            <div className="flex items-center gap-2 mb-3">
+              <Logo size={32} />
+              <span className="text-xl font-bold text-white">NESYA</span>
+            </div>
+            <p className="text-sm text-gray-400 max-w-xs">La beaute, simplement connectee. Reservez vos services de beaute en Cote d Ivoire.</p>
+            <p className="text-sm text-gray-500 mt-3">Abidjan, Cote d Ivoire</p>
           </div>
-          <span className="text-xs font-semibold text-gray-700 text-center">{c.name}</span>
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function ServiceCard({ service, onBook }) {
-  const cat = CATEGORIES.find((c) => c.id === service.category);
-  const total = service.price + service.travelFee;
-  return (
-    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-xl hover:border-purple-200 transition-all hover:-translate-y-1 cursor-pointer" onClick={() => onBook(service)}>
-      <div className="h-36 bg-gradient-to-br from-purple-100 via-pink-50 to-rose-100 flex items-center justify-center text-6xl relative">
-        {service.image}
-        {service.verified && (
-          <span className="absolute top-2 right-2 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-            ✓ Vérifié
-          </span>
-        )}
-      </div>
-      <div className="p-4">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-[10px] font-medium text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">{cat?.name}</span>
-          <span className="text-[10px] text-gray-400">⏱ {service.duration}min</span>
-        </div>
-        <h3 className="font-bold text-gray-800 text-sm leading-tight mb-1">{service.title}</h3>
-        <p className="text-xs text-gray-500 mb-2 truncate">{service.provider} · {service.commune}</p>
-        <div className="flex items-center gap-1 mb-2">
-          <span className="text-amber-400 text-xs">★ {service.rating}</span>
-          <span className="text-[10px] text-gray-400">({service.reviews})</span>
-        </div>
-        <div className="flex items-end justify-between">
           <div>
-            <p className="text-[10px] text-gray-400">Prix tout compris</p>
-            <p className="font-black text-purple-700">{formatPrice(total)}</p>
+            <h4 className="font-semibold text-white mb-3 text-sm">Services</h4>
+            {CATEGORIES.slice(0, 5).map(c => (
+              <button key={c.id} onClick={() => navigate('/services?cat=' + c.id)} className="block text-sm text-gray-400 hover:text-white py-1">{c.name}</button>
+            ))}
           </div>
-          <button className="bg-gradient-to-r from-purple-600 to-pink-500 text-white text-xs font-semibold px-4 py-2 rounded-full shadow-md shadow-purple-200 hover:shadow-lg transition">
-            Réserver
-          </button>
+          <div>
+            <h4 className="font-semibold text-white mb-3 text-sm">Liens</h4>
+            <button onClick={() => navigate('/about')} className="block text-sm text-gray-400 hover:text-white py-1">A propos</button>
+            <button onClick={() => navigate('/providers')} className="block text-sm text-gray-400 hover:text-white py-1">Prestataires</button>
+            <button onClick={() => navigate('/register')} className="block text-sm text-gray-400 hover:text-white py-1">Devenir prestataire</button>
+            <button onClick={() => navigate('/help')} className="block text-sm text-gray-400 hover:text-white py-1">Aide & FAQ</button>
+          </div>
+        </div>
+        <div className="border-t border-gray-800 pt-6 text-center">
+          <p className="text-xs text-gray-500">© 2026 NESYA. Tous droits reserves. - Donnees fictives (demonstration) - Paiements en mode test</p>
         </div>
       </div>
+    </footer>
+  );
+}
+
+/* ====== HOME ====== */
+function Home({ navigate }) {
+  const [search, setSearch] = useState('');
+  const [selectedCat, setSelectedCat] = useState('');
+  return (
+    <div className="fade-in">
+      <section className="gradient-brand text-white py-12 md:py-20 px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="flex justify-center mb-5"><Logo size={64} /></div>
+          <h1 className="text-3xl md:text-5xl font-extrabold mb-3">La beaute, simplement connectee</h1>
+          <p className="text-lg md:text-xl opacity-90 mb-8">Reservez vos services de beaute a Abidjan en quelques clics. Paiement apres la prestation.</p>
+          <div className="bg-white rounded-2xl p-3 flex flex-col sm:flex-row gap-2 max-w-2xl mx-auto shadow-lg">
+            <input type="text" placeholder="Rechercher un service..." value={search}
+              onChange={e => setSearch(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') navigate('/services?q=' + encodeURIComponent(search)); }}
+              className="flex-1 px-4 py-3 text-gray-800 rounded-xl border-0 text-sm" />
+            <select value={selectedCat} onChange={e => setSelectedCat(e.target.value)}
+              className="px-4 py-3 text-gray-600 rounded-xl border-0 bg-gray-50 text-sm">
+              <option value="">Toutes categories</option>
+              {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+            <Button onClick={() => navigate('/services?q=' + encodeURIComponent(search) + '&cat=' + selectedCat)}>Rechercher</Button>
+          </div>
+          <div className="flex justify-center gap-6 mt-8 text-sm">
+            <div className="text-center"><p className="text-2xl font-bold">89</p><p className="opacity-80">Prestataires verifies</p></div>
+            <div className="text-center"><p className="text-2xl font-bold">1 247</p><p className="opacity-80">Clients satisfaits</p></div>
+            <div className="text-center"><p className="text-2xl font-bold">4.8</p><p className="opacity-80">Note moyenne</p></div>
+          </div>
+        </div>
+      </section>
+
+      <section className="max-w-6xl mx-auto px-4 py-10">
+        <h2 className="text-2xl font-bold text-gray-800 mb-6">Categories de services</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {CATEGORIES.map(cat => (
+            <Card key={cat.id} onClick={() => navigate('/services?cat=' + cat.id)} className="text-center cursor-pointer">
+              <div className="text-4xl mb-2">{cat.icon}</div>
+              <h3 className="font-semibold text-gray-800 text-sm">{cat.name}</h3>
+              <p className="text-xs text-gray-400 mt-1">{PROVIDERS.filter(p => p.category === cat.id).length} prestataires</p>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      <section className="max-w-6xl mx-auto px-4 py-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-800">Prestataires populaires</h2>
+          <button onClick={() => navigate('/providers')} className="text-sm text-purple-600 font-medium">Voir tout</button>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {PROVIDERS.filter(p => p.rating >= 4.7).slice(0, 6).map(p => (
+            <Card key={p.id} onClick={() => navigate('/provider/' + p.id)} className="cursor-pointer">
+              <div className="flex items-start gap-3">
+                <Avatar name={p.name} size={52} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1">
+                    <h3 className="font-semibold text-gray-800 truncate">{p.name}</h3>
+                    {p.verified && <span className="text-purple-600 text-sm">✓</span>}
+                  </div>
+                  <div className="flex items-center gap-1 mt-1">
+                    <StarRating rating={p.rating} size={12} />
+                    <span className="text-xs text-gray-500">{p.rating} ({p.reviews})</span>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1 truncate">{p.location}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge color="pink">{CATEGORIES.find(c => c.id === p.category).name}</Badge>
+                    <span className="text-sm font-bold text-purple-600">{p.price.toLocaleString()} F</span>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      <section className="max-w-6xl mx-auto px-4 py-10">
+        <Card className="gradient-brand text-white text-center">
+          <h2 className="text-2xl font-bold mb-2">Vous etes professionnelle de la beaute ?</h2>
+          <p className="opacity-90 mb-4">Rejoignez NESYA et developpez votre clientele. 1 mois gratuit pour les 100 premiers.</p>
+          <Button variant="gold" onClick={() => navigate('/register')}>Demarrer maintenant</Button>
+        </Card>
+      </section>
+
+      <section className="max-w-6xl mx-auto px-4 py-6">
+        <h2 className="text-2xl font-bold text-gray-800 mb-6">Comment ca marche</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[{ n: '1', t: 'Recherchez', d: 'Trouvez le service et le prestataire parfait pres de chez vous.' },
+            { n: '2', t: 'Reservez', d: 'Choisissez un creneau et reservez. Paiement apres la prestation.' },
+            { n: '3', t: 'Profitez', d: 'Le prestataire intervient a domicile ou en atelier. Vous payez une fois termine.' }
+          ].map(step => (
+            <div key={step.n} className="text-center">
+              <div className="w-14 h-14 rounded-full gradient-brand text-white text-2xl font-bold flex items-center justify-center mx-auto mb-3">{step.n}</div>
+              <h3 className="font-semibold text-gray-800 mb-1">{step.t}</h3>
+              <p className="text-sm text-gray-500">{step.d}</p>
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
 
-function BookingModal({ service, onClose, onConfirm }) {
-  const [step, setStep] = useState(1);
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
-  const [mode, setMode] = useState(service.modes[0]);
-  const [address, setAddress] = useState("");
-  const [payment, setPayment] = useState(null);
-  const [confirmed, setConfirmed] = useState(false);
-  const total = service.price + service.travelFee;
+/* ====== SERVICES ====== */
+function Services({ navigate, route }) {
+  const params = useMemo(() => {
+    const q = route.split('?')[1] || '';
+    const url = new URLSearchParams(q);
+    return { q: url.get('q') || '', cat: url.get('cat') || '' };
+  }, [route]);
+  const [search, setSearch] = useState(params.q);
+  const [cat, setCat] = useState(params.cat);
+  const [sort, setSort] = useState('rating');
+  useEffect(() => { setSearch(params.q); setCat(params.cat); }, [route]);
 
-  const timeSlots = ["08:00", "09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
+  const filtered = useMemo(() => {
+    let r = PROVIDERS.filter(p => {
+      const ms = !search || p.name.toLowerCase().includes(search.toLowerCase()) || p.services.some(s => s.toLowerCase().includes(search.toLowerCase()));
+      const mc = !cat || p.category === cat;
+      return ms && mc;
+    });
+    if (sort === 'rating') r = [...r].sort((a, b) => b.rating - a.rating);
+    if (sort === 'price-asc') r = [...r].sort((a, b) => a.price - b.price);
+    if (sort === 'price-desc') r = [...r].sort((a, b) => b.price - a.price);
+    return r;
+  }, [search, cat, sort]);
 
-  const modeLabels = { domicile_client: "À domicile (chez vous)", domicile_prestataire: "Chez le prestataire", sur_lieu: "Sur place (salon)" };
+  return (
+    <div className="max-w-6xl mx-auto px-4 py-6 fade-in">
+      <h1 className="text-2xl font-bold text-gray-800 mb-4">Services de beaute</h1>
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <input type="text" placeholder="Rechercher..." value={search} onChange={e => setSearch(e.target.value)}
+          className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm" />
+        <select value={cat} onChange={e => setCat(e.target.value)} className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white">
+          <option value="">Toutes categories</option>
+          {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+        <select value={sort} onChange={e => setSort(e.target.value)} className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white">
+          <option value="rating">Mieux notes</option>
+          <option value="price-asc">Prix croissant</option>
+          <option value="price-desc">Prix decroissant</option>
+        </select>
+      </div>
+      <p className="text-sm text-gray-500 mb-4">{filtered.length} prestataire(s) trouve(s)</p>
+      {filtered.length === 0 ? (
+        <EmptyState icon="🔍" title="Aucun prestataire trouve" sub="Essayez d autres criteres" />
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.map(p => (
+            <Card key={p.id} onClick={() => navigate('/provider/' + p.id)} className="cursor-pointer">
+              <div className="flex items-start gap-3">
+                <Avatar name={p.name} size={52} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1">
+                    <h3 className="font-semibold text-gray-800 truncate">{p.name}</h3>
+                    {p.verified && <span className="text-purple-600 text-sm">✓</span>}
+                  </div>
+                  <div className="flex items-center gap-1 mt-1">
+                    <StarRating rating={p.rating} size={12} />
+                    <span className="text-xs text-gray-500">{p.rating} ({p.reviews})</span>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">{p.location}</p>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {p.services.slice(0, 2).map(s => <Badge key={s} color="purple">{s}</Badge>)}
+                    {p.services.length > 2 && <Badge color="gray">+{p.services.length - 2}</Badge>}
+                  </div>
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
+                    <span className="text-lg font-bold gradient-text">{p.price.toLocaleString()} F</span>
+                    <Button size="sm" onClick={e => { e.stopPropagation(); navigate('/provider/' + p.id); }}>Voir</Button>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
-  const handleConfirm = () => {
-    setConfirmed(true);
-    setStep(4);
-    setTimeout(() => { onConfirm(); }, 200);
+/* ====== PROVIDER DETAIL ====== */
+function ProviderDetail({ navigate, route, currentUser }) {
+  const id = route.split('/')[2];
+  const provider = PROVIDERS.find(p => p.id === id);
+  const [selectedService, setSelectedService] = useState(null);
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
+  const [selectedMode, setSelectedMode] = useState('');
+  const [bookingModal, setBookingModal] = useState(false);
+
+  if (!provider) {
+    return <div className="max-w-4xl mx-auto px-4 py-20 text-center">
+      <p className="text-gray-500">Prestataire introuvable</p>
+      <Button onClick={() => navigate('/services')} className="mt-4">Voir les services</Button>
+    </div>;
+  }
+
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(); d.setDate(d.getDate() + i);
+    return { date: d.toISOString().split('T')[0], label: d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' }) };
+  });
+
+  const handleBook = () => {
+    if (!currentUser) { navigate('/login'); return; }
+    if (!selectedService || !selectedDate || !selectedTime || !selectedMode) return;
+    setBookingModal(true);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={onClose}>
-      <div className="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-4 flex items-center justify-between z-10 rounded-t-3xl">
-          <h2 className="font-bold text-gray-800">{confirmed ? "✅ Réservation confirmée" : "Réserver"}</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500">✕</button>
-        </div>
+    <div className="max-w-4xl mx-auto px-4 py-6 fade-in">
+      <button onClick={() => navigate('/services')} className="text-sm text-gray-500 mb-4">← Retour</button>
 
-        {/* Steps indicator */}
-        {!confirmed && (
-          <div className="flex items-center gap-1 px-5 py-3">
-            {[1, 2, 3].map((s) => (
-              <div key={s} className={`h-1.5 flex-1 rounded-full ${step >= s ? "bg-gradient-to-r from-purple-600 to-pink-500" : "bg-gray-200"}`} />
-            ))}
-          </div>
-        )}
-
-        <div className="p-5">
-          {confirmed ? (
-            <div className="text-center py-8">
-              <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center text-4xl mx-auto mb-4">✅</div>
-              <h3 className="text-xl font-black text-gray-800 mb-2">Réservation confirmée !</h3>
-              <p className="text-sm text-gray-500 mb-4">Référence: NESYA-{Math.random().toString(36).substring(2, 8).toUpperCase()}</p>
-              <div className="bg-purple-50 rounded-2xl p-4 text-left text-sm space-y-2">
-                <div className="flex justify-between"><span className="text-gray-500">Service</span><span className="font-semibold">{service.title}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Date</span><span className="font-semibold">{date} à {time}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Lieu</span><span className="font-semibold">{modeLabels[mode]}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Paiement</span><span className="font-semibold">Après le service</span></div>
-                <div className="flex justify-between border-t border-purple-200 pt-2"><span className="text-gray-500">Total</span><span className="font-black text-purple-700">{formatPrice(total)}</span></div>
-              </div>
-              <p className="text-xs text-amber-600 bg-amber-50 rounded-xl p-3 mt-4">💡 Le paiement se fait <strong>après</strong> la prestation du service.</p>
-              <button onClick={onClose} className="mt-6 w-full bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold py-3 rounded-2xl">Terminer</button>
-            </div>
-          ) : step === 1 ? (
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-semibold text-gray-700 block mb-2">📅 Date du rendez-vous</label>
-                <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-purple-400" min={new Date().toISOString().split("T")[0]} />
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-gray-700 block mb-2">🕐 Créneau horaire</label>
-                <div className="grid grid-cols-4 gap-2">
-                  {timeSlots.map((t) => (
-                    <button key={t} onClick={() => setTime(t)} className={`py-2 rounded-xl text-sm font-medium transition ${time === t ? "bg-gradient-to-r from-purple-600 to-pink-500 text-white" : "bg-gray-50 text-gray-600 hover:bg-purple-50"}`}>{t}</button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-gray-700 block mb-2">📍 Mode de prestation</label>
-                <div className="space-y-2">
-                  {service.modes.map((m) => (
-                    <button key={m} onClick={() => setMode(m)} className={`w-full text-left px-4 py-3 rounded-xl border text-sm transition ${mode === m ? "border-purple-400 bg-purple-50 font-semibold text-purple-700" : "border-gray-200 text-gray-600 hover:border-purple-200"}`}>
-                      {modeLabels[m]}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              {mode === "domicile_client" && (
-                <div>
-                  <label className="text-sm font-semibold text-gray-700 block mb-2">🏠 Votre adresse</label>
-                  <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Ex: Cocody, Riviera Palmeraie..." className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-purple-400" />
-                </div>
-              )}
-              <button disabled={!date || !time} onClick={() => setStep(2)} className="w-full bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold py-3 rounded-2xl disabled:opacity-40">Continuer</button>
-            </div>
-          ) : step === 2 ? (
-            <div className="space-y-4">
-              <div className="bg-purple-50 rounded-2xl p-4">
-                <h3 className="font-bold text-gray-800 mb-3">📋 Récapitulatif</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between"><span className="text-gray-500">Service</span><span className="font-medium">{service.title}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-500">Prestataire</span><span className="font-medium">{service.provider}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-500">Date</span><span className="font-medium">{date} à {time}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-500">Lieu</span><span className="font-medium">{modeLabels[mode]}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-500">Prix de base</span><span className="font-medium">{formatPrice(service.price)}</span></div>
-                  {service.travelFee > 0 && <div className="flex justify-between"><span className="text-gray-500">Frais de déplacement</span><span className="font-medium">{formatPrice(service.travelFee)}</span></div>}
-                  <div className="flex justify-between border-t border-purple-200 pt-2 text-base"><span className="font-bold">Total</span><span className="font-black text-purple-700">{formatPrice(total)}</span></div>
-                </div>
-              </div>
-              <div className="bg-amber-50 rounded-xl p-3 text-xs text-amber-700">
-                💡 Chez NESYA, vous payez <strong>après</strong> la prestation. Le prestataire terminera le service puis vous recevrez une demande de paiement.
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => setStep(1)} className="flex-1 border border-gray-200 text-gray-600 font-semibold py-3 rounded-2xl">Retour</button>
-                <button onClick={() => setStep(3)} className="flex-1 bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold py-3 rounded-2xl">Continuer</button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <h3 className="font-bold text-gray-800">Choisissez votre mode de paiement</h3>
-              <p className="text-xs text-gray-500">Le paiement sera initié après la prestation du service.</p>
-              <div className="space-y-2">
-                {PAYMENT_METHODS.map((m) => (
-                  <button key={m.id} onClick={() => setPayment(m.id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition ${payment === m.id ? "border-purple-400 bg-purple-50" : "border-gray-200 hover:border-purple-200"}`}>
-                    <span className="text-2xl">{m.icon}</span>
-                    <span className="font-medium text-gray-700 text-sm">{m.name}</span>
-                    {payment === m.id && <span className="ml-auto text-purple-600">✓</span>}
-                  </button>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => setStep(2)} className="flex-1 border border-gray-200 text-gray-600 font-semibold py-3 rounded-2xl">Retour</button>
-                <button disabled={!payment} onClick={handleConfirm} className="flex-1 bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold py-3 rounded-2xl disabled:opacity-40">Confirmer</button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function BookingsList({ bookings }) {
-  if (bookings.length === 0) {
-    return (
-      <div className="text-center py-20">
-        <div className="text-6xl mb-4">📅</div>
-        <p className="text-gray-400 font-medium">Aucune réservation pour le moment</p>
-      </div>
-    );
-  }
-  const statusColors = { en_attente: "bg-yellow-100 text-yellow-700", confirme: "bg-blue-100 text-blue-700", termine: "bg-purple-100 text-purple-700", paye: "bg-green-100 text-green-700", annule: "bg-red-100 text-red-700" };
-  const statusLabels = { en_attente: "En attente", confirme: "Confirmé", termine: "Terminé", paye: "Payé", annule: "Annulé" };
-  return (
-    <div className="space-y-3">
-      {bookings.map((b, i) => (
-        <div key={i} className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center text-3xl">{b.image}</div>
+      <Card className="mb-5">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <Avatar name={provider.name} size={80} />
           <div className="flex-1">
-            <h3 className="font-bold text-gray-800 text-sm">{b.title}</h3>
-            <p className="text-xs text-gray-500">{b.provider}</p>
-            <p className="text-xs text-gray-400">{b.date} · {b.time}</p>
-          </div>
-          <div className="text-right">
-            <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${statusColors[b.status] || "bg-gray-100 text-gray-600"}`}>{statusLabels[b.status] || b.status}</span>
-            <p className="font-black text-purple-700 text-sm mt-1">{formatPrice(b.total)}</p>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-bold text-gray-800">{provider.name}</h1>
+              {provider.verified && <Badge color="purple">Verifie</Badge>}
+            </div>
+            <div className="flex items-center gap-2 mt-1">
+              <StarRating rating={provider.rating} />
+              <span className="text-sm text-gray-500">{provider.rating} ({provider.reviews} avis)</span>
+            </div>
+            <p className="text-sm text-gray-500 mt-1">{provider.location} - {provider.distance}</p>
+            <p className="text-sm text-gray-600 mt-2">{provider.bio}</p>
+            <div className="flex gap-2 mt-3">
+              <Badge color="pink">{CATEGORIES.find(c => c.id === provider.category).name}</Badge>
+              {provider.mode.map(m => <Badge key={m} color={m === 'domicile' ? 'green' : 'blue'}>{m === 'domicile' ? 'A domicile' : 'En atelier'}</Badge>)}
+            </div>
           </div>
         </div>
-      ))}
+      </Card>
+
+      <Card className="mb-5">
+        <h2 className="font-bold text-gray-800 mb-3">Services proposes</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {provider.services.map(s => (
+            <div key={s} onClick={() => setSelectedService(s)}
+              className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${selectedService === s ? 'border-purple-500 bg-purple-50' : 'border-gray-100'}`}>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-700">{s}</span>
+                <span className="text-sm font-bold gradient-text">{provider.price.toLocaleString()} F</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <Card className="mb-5">
+        <h2 className="font-bold text-gray-800 mb-3">Choisir un creneau</h2>
+        <p className="text-sm text-gray-500 mb-2">Date</p>
+        <div className="flex gap-2 overflow-x-auto mb-4 pb-2">
+          {days.map(d => (
+            <button key={d.date} onClick={() => setSelectedDate(d.date)}
+              className={`flex-shrink-0 px-3 py-2 rounded-xl text-xs font-medium border-2 transition-all ${selectedDate === d.date ? 'border-purple-500 bg-purple-50 text-purple-700' : 'border-gray-100 text-gray-600'}`}>
+              {d.label}
+            </button>
+          ))}
+        </div>
+        <p className="text-sm text-gray-500 mb-2">Heure</p>
+        <div className="grid grid-cols-5 gap-2">
+          {TIME_SLOTS.map(t => (
+            <button key={t} onClick={() => setSelectedTime(t)}
+              className={`px-2 py-2 rounded-lg text-xs font-medium border-2 transition-all ${selectedTime === t ? 'border-purple-500 bg-purple-50 text-purple-700' : 'border-gray-100 text-gray-600'}`}>
+              {t}
+            </button>
+          ))}
+        </div>
+      </Card>
+
+      <Card className="mb-5">
+        <h2 className="font-bold text-gray-800 mb-3">Lieu de la prestation</h2>
+        <div className="grid grid-cols-2 gap-3">
+          {provider.mode.map(m => (
+            <button key={m} onClick={() => setSelectedMode(m)}
+              className={`p-4 rounded-xl border-2 text-center transition-all ${selectedMode === m ? 'border-purple-500 bg-purple-50' : 'border-gray-100'}`}>
+              <p className="text-2xl mb-1">{m === 'domicile' ? '🏠' : '🏪'}</p>
+              <p className="text-sm font-medium">{m === 'domicile' ? 'A domicile' : 'En atelier'}</p>
+              <p className="text-xs text-gray-400">{m === 'domicile' ? 'Le prestataire vient chez vous' : 'Vous vous deplacez'}</p>
+            </button>
+          ))}
+        </div>
+      </Card>
+
+      <div className="sticky bottom-4">
+        <Card className="flex items-center justify-between">
+          <div>
+            {selectedService ? (
+              <>
+                <p className="text-xs text-gray-400">{selectedService}</p>
+                <p className="text-lg font-bold gradient-text">{provider.price.toLocaleString()} F</p>
+              </>
+            ) : <p className="text-sm text-gray-400">Selectionnez un service</p>}
+          </div>
+          <Button onClick={handleBook} disabled={!selectedService || !selectedDate || !selectedTime || !selectedMode} size="lg">
+            {currentUser ? 'Reserver' : 'Connexion requise'}
+          </Button>
+        </Card>
+      </div>
+
+      <Modal open={bookingModal} onClose={() => setBookingModal(false)} title="Confirmation de reservation">
+        <div className="space-y-4">
+          <div className="bg-purple-50 rounded-xl p-4 text-center">
+            <div className="text-3xl mb-2">✅</div>
+            <h3 className="font-bold text-gray-800">Reservation confirmee !</h3>
+            <p className="text-sm text-gray-500 mt-1">Reservation BK-2026-{String(Math.floor(Math.random() * 900) + 100)}</p>
+          </div>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between"><span className="text-gray-500">Prestataire</span><span className="font-medium">{provider.name}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Service</span><span className="font-medium">{selectedService}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Date</span><span className="font-medium">{selectedDate}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Heure</span><span className="font-medium">{selectedTime}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Lieu</span><span className="font-medium">{selectedMode === 'domicile' ? 'A domicile' : 'En atelier'}</span></div>
+            <div className="flex justify-between pt-2 border-t"><span className="text-gray-500">Montant</span><span className="font-bold gradient-text">{provider.price.toLocaleString()} F</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Paiement</span><span className="text-orange-500 font-medium">Apres la prestation</span></div>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => { setBookingModal(false); navigate('/bookings'); }} className="flex-1">Mes reservations</Button>
+            <Button onClick={() => { setBookingModal(false); navigate('/'); }} className="flex-1">Accueil</Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
 
-function ProfilePage({ user }) {
+/* ====== BOOKINGS ====== */
+function Bookings({ navigate, currentUser }) {
+  if (!currentUser) {
+    return <div className="max-w-4xl mx-auto px-4 py-20 text-center">
+      <div className="text-5xl mb-3 opacity-30">📅</div>
+      <p className="text-gray-500 font-medium">Connectez-vous pour voir vos reservations</p>
+      <Button onClick={() => navigate('/login')} className="mt-4">Connexion</Button>
+    </div>;
+  }
+  const statusColors = { confirmee: 'green', realisee: 'blue', annulee: 'red', payee: 'purple', en_attente: 'yellow' };
+  const statusLabels = { confirmee: 'Confirmee', realisee: 'Realisee', annulee: 'Annulee', payee: 'Payee', en_attente: 'En attente' };
   return (
-    <div className="max-w-lg mx-auto space-y-4">
-      <div className="bg-white rounded-3xl p-6 text-center border border-gray-100">
-        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-4xl text-white font-black mx-auto mb-4 shadow-lg shadow-purple-200">F</div>
-        <h2 className="text-xl font-black text-gray-800">{user?.name || "Freezer Freezer"}</h2>
-        <p className="text-sm text-gray-400">{user?.phone || "+225 07 00 00 00 01"}</p>
-        <span className="inline-block mt-2 bg-green-50 text-green-600 text-xs font-bold px-3 py-1 rounded-full">✓ Téléphone vérifié</span>
-      </div>
-      <div className="bg-white rounded-2xl p-4 border border-gray-100 space-y-3">
-        {[
-          { icon: "🔒", label: "Sécurité & 2FA", val: "Configurer" },
-          { icon: "📍", label: "Mes adresses", val: "2 adresses" },
-          { icon: "💳", label: "Moyens de paiement", val: "4 méthodes" },
-          { icon: "⭐", label: "Mes avis", val: "0 avis" },
-          { icon: "❤️", label: "Mes favoris", val: "0 favoris" },
-          { icon: "🔔", label: "Notifications", val: "3 nouvelles" },
-          { icon: "❓", label: "Aide & support", val: "" },
-          { icon: "📋", label: "Conditions d'utilisation", val: "" },
-        ].map((item, i) => (
-          <button key={i} className="w-full flex items-center gap-3 py-2 hover:bg-purple-50 rounded-xl px-2 transition text-left">
-            <span className="text-xl">{item.icon}</span>
-            <span className="text-sm font-medium text-gray-700 flex-1">{item.label}</span>
-            {item.val && <span className="text-xs text-gray-400">{item.val}</span>}
-            <span className="text-gray-300">›</span>
-          </button>
+    <div className="max-w-4xl mx-auto px-4 py-6 fade-in">
+      <h1 className="text-2xl font-bold text-gray-800 mb-5">Mes reservations</h1>
+      <div className="space-y-3">
+        {MOCK_BOOKINGS.map(b => (
+          <Card key={b.id}>
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-gray-800">{b.service}</h3>
+                  <Badge color={statusColors[b.status]}>{statusLabels[b.status]}</Badge>
+                </div>
+                <p className="text-sm text-gray-500 mt-1">{b.provider}</p>
+                <p className="text-xs text-gray-400">{b.date} a {b.time} - {b.location}</p>
+              </div>
+              <div className="text-right">
+                <p className="font-bold gradient-text">{b.price.toLocaleString()} F</p>
+                <p className="text-xs text-gray-400 mt-1">{b.payment === 'payee' ? 'Paye' : b.payment === 'en_attente' ? 'Paiement en attente' : b.payment === 'echec' ? 'Paiement echoue' : 'En attente'}</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-between pt-3 border-t border-gray-50">
+              <span className="text-xs text-gray-400">Reservation {b.id}</span>
+              <div className="flex gap-2">
+                {b.promo && <Badge color="yellow">Code: {b.promo}</Badge>}
+                {b.status === 'realisee' && b.payment === 'en_attente' && <Button size="sm" onClick={() => navigate('/payment/' + b.id)}>Payer maintenant</Button>}
+                {b.status === 'confirmee' && <Button size="sm" variant="outline" onClick={() => navigate('/provider/' + (PROVIDERS.find(p => p.name === b.provider) || {}).id)}>Voir le prestataire</Button>}
+              </div>
+            </div>
+          </Card>
         ))}
       </div>
     </div>
   );
 }
 
-// ============ MAIN APP ============
+/* ====== PAYMENT ====== */
+function Payment({ navigate, route }) {
+  const bookingId = route.split('/')[2];
+  const booking = MOCK_BOOKINGS.find(b => b.id === bookingId);
+  const [method, setMethod] = useState('');
+  const [promoCode, setPromoCode] = useState('');
+  const [promoApplied, setPromoApplied] = useState(null);
+  const [promoError, setPromoError] = useState('');
+  const [step, setStep] = useState('select');
+  const [processing, setProcessing] = useState(false);
 
-function App() {
-  const [page, setPage] = useState("home");
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [bookingService, setBookingService] = useState(null);
-  const [bookings, setBookings] = useState([
-    { title: "Tresses collées avec mèches", provider: "Aïcha Beauty", date: "2026-09-05", time: "10:00", total: 16000, status: "confirme", image: "👩🏾‍🦱" },
-    { title: "Maquillage soirée complète", provider: "Glam by Fatou", date: "2026-08-28", time: "15:00", total: 12500, status: "paye", image: "💄" },
-  ]);
+  if (!booking) {
+    return <div className="max-w-4xl mx-auto px-4 py-20 text-center">
+      <p className="text-gray-500">Reservation introuvable</p>
+      <Button onClick={() => navigate('/bookings')} className="mt-4">Mes reservations</Button>
+    </div>;
+  }
 
-  const navigate = (p) => { setPage(p); setSelectedCategory(null); };
+  let total = booking.price;
+  if (promoApplied) {
+    if (promoApplied.type === 'percent') total -= total * promoApplied.value / 100;
+    else total -= promoApplied.value;
+    total = Math.max(0, total);
+  }
 
-  const filteredServices = SERVICES.filter((s) => {
-    if (selectedCategory && s.category !== selectedCategory) return false;
-    if (searchQuery && !s.title.toLowerCase().includes(searchQuery.toLowerCase()) && !s.provider.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-    return true;
-  });
+  const applyPromo = () => {
+    const promo = PROMO_CODES.find(p => p.code === promoCode.toUpperCase() && p.active);
+    if (!promo) { setPromoError('Code invalide ou expire'); setPromoApplied(null); return; }
+    setPromoApplied(promo); setPromoError('');
+  };
+
+  const handlePay = () => {
+    if (!method) return;
+    setProcessing(true);
+    setTimeout(() => { setProcessing(false); setStep('success'); }, 2000);
+  };
+
+  if (step === 'success') {
+    return <div className="max-w-md mx-auto px-4 py-12 fade-in">
+      <Card className="text-center">
+        <div className="text-5xl mb-3">✅</div>
+        <h2 className="text-xl font-bold text-gray-800">Paiement reussi !</h2>
+        <p className="text-sm text-gray-500 mt-2">Paiement de {Math.round(total).toLocaleString()} F via {PAYMENT_METHODS.find(m => m.id === method).name}</p>
+        <p className="text-xs text-gray-400 mt-1">Reservation {booking.id}</p>
+        <div className="mt-5 space-y-2">
+          <Button onClick={() => navigate('/bookings')} className="w-full">Mes reservations</Button>
+          <Button variant="outline" onClick={() => navigate('/')} className="w-full">Accueil</Button>
+        </div>
+      </Card>
+    </div>;
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-pink-50">
-      <Header onNav={navigate} page={page} user={{ name: "Freezer Freezer" }} />
+    <div className="max-w-md mx-auto px-4 py-6 fade-in">
+      <button onClick={() => navigate('/bookings')} className="text-sm text-gray-500 mb-4">← Retour</button>
+      <h1 className="text-2xl font-bold text-gray-800 mb-4">Paiement</h1>
 
-      <main className="max-w-5xl mx-auto px-4 py-6">
-        {page === "home" && (
-          <>
-            {/* Hero */}
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-600 via-purple-500 to-pink-500 p-8 mb-6 text-white">
-              <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-12 translate-x-12" />
-              <div className="absolute bottom-0 left-0 w-32 h-32 bg-pink-300/20 rounded-full translate-y-12 -translate-x-8" />
-              <div className="relative z-10">
-                <p className="text-amber-300 font-semibold text-sm mb-1">✨ Réservez votre rendez-vous beauté</p>
-                <h2 className="text-3xl font-black mb-2 leading-tight">La beauté,<br/>simplement connectée</h2>
-                <p className="text-purple-100 text-sm mb-4 max-w-md">Coiffure, tresses, maquillage, ongles... Trouvez les meilleurs professionnels près de chez vous à Abidjan.</p>
-                <div className="flex gap-2">
-                  <button onClick={() => document.getElementById("search")?.scrollIntoView({ behavior: "smooth" })} className="bg-white text-purple-700 font-semibold px-5 py-2.5 rounded-full text-sm shadow-lg hover:shadow-xl transition">
-                    🔍 Rechercher
-                  </button>
-                  <button className="bg-white/20 backdrop-blur text-white font-semibold px-5 py-2.5 rounded-full text-sm border border-white/30 hover:bg-white/30 transition">
-                    📖 Comment ça marche
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Search */}
-            <div className="mb-6" id="search">
-              <input type="text" placeholder="🔍 Rechercher un service, un professionnel..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full border border-gray-200 rounded-2xl px-5 py-3.5 text-sm focus:outline-none focus:border-purple-400 bg-white shadow-sm" />
-            </div>
-
-            {/* Categories */}
-            {!selectedCategory && !searchQuery && (
-              <div className="mb-6">
-                <h3 className="text-lg font-black text-gray-800 mb-3">Catégories</h3>
-                <CategoryGrid onSelect={(id) => setSelectedCategory(id)} />
-              </div>
-            )}
-
-            {/* Services */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-lg font-black text-gray-800">
-                  {selectedCategory ? `${CATEGORIES.find((c) => c.id === selectedCategory)?.name} — Services` : "Services populaires"}
-                </h3>
-                {selectedCategory && <button onClick={() => setSelectedCategory(null)} className="text-sm text-purple-600 font-medium">← Toutes les catégories</button>}
-              </div>
-              {filteredServices.length === 0 ? (
-                <div className="text-center py-16 text-gray-400">
-                  <div className="text-5xl mb-3">🔍</div>
-                  <p>Aucun service trouvé</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  {filteredServices.map((s) => (
-                    <ServiceCard key={s.id} service={s} onBook={(svc) => setBookingService(svc)} />
-                  ))}
-                </div>
-              )}
-            </div>
-          </>
-        )}
-
-        {page === "bookings" && <BookingsList bookings={bookings} />}
-        {page === "profile" && <ProfilePage user={{ name: "Freezer Freezer", phone: "+225 07 00 00 00 01" }} />}
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t border-purple-100 bg-white py-6 mt-8">
-        <div className="max-w-5xl mx-auto px-4 text-center">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center">
-              <span className="text-white font-black text-sm" style={{ fontFamily: "Georgia" }}>N</span>
-            </div>
-            <span className="font-black text-gray-700">NESYA</span>
-          </div>
-          <p className="text-xs text-gray-400">La beauté, simplement connectée · Côte d'Ivoire 🇨🇮</p>
-          <p className="text-[10px] text-gray-300 mt-2">Paiement après prestation · Vérification d'identité · Paiement Mobile Money</p>
+      <Card className="mb-4">
+        <h3 className="font-semibold text-gray-800 mb-3">{booking.service}</h3>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between"><span className="text-gray-500">Prestataire</span><span>{booking.provider}</span></div>
+          <div className="flex justify-between"><span className="text-gray-500">Date</span><span>{booking.date} a {booking.time}</span></div>
+          <div className="flex justify-between pt-2 border-t"><span className="text-gray-500">Montant</span><span className="font-bold">{booking.price.toLocaleString()} F</span></div>
         </div>
-      </footer>
+      </Card>
 
-      {/* Booking Modal */}
-      {bookingService && (
-        <BookingModal
-          service={bookingService}
-          onClose={() => setBookingService(null)}
-          onConfirm={() => {
-            setBookings((prev) => [
-              { title: bookingService.title, provider: bookingService.provider, date: "2026-09-10", time: "10:00", total: bookingService.price + bookingService.travelFee, status: "en_attente", image: bookingService.image },
-              ...prev,
-            ]);
-            setBookingService(null);
-            navigate("bookings");
-          }}
-        />
+      <Card className="mb-4">
+        <h3 className="font-semibold text-gray-800 mb-3">Code promo</h3>
+        <div className="flex gap-2">
+          <input type="text" placeholder="Ex: NESYA10" value={promoCode}
+            onChange={e => setPromoCode(e.target.value.toUpperCase())}
+            className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm uppercase" />
+          <Button variant="outline" onClick={applyPromo}>Appliquer</Button>
+        </div>
+        {promoError && <p className="text-red-500 text-xs mt-2">{promoError}</p>}
+        {promoApplied && (
+          <div className="mt-2 p-2 bg-green-50 rounded-lg flex items-center justify-between">
+            <span className="text-sm text-green-700">{promoApplied.code} - {promoApplied.description}</span>
+            <Badge color="green">-{promoApplied.type === 'percent' ? promoApplied.value + '%' : promoApplied.value.toLocaleString() + ' F'}</Badge>
+          </div>
+        )}
+      </Card>
+
+      <Card className="mb-4">
+        <h3 className="font-semibold text-gray-800 mb-3">Moyen de paiement</h3>
+        <div className="space-y-2">
+          {PAYMENT_METHODS.map(m => (
+            <button key={m.id} onClick={() => setMethod(m.id)}
+              className={`w-full p-3 rounded-xl border-2 flex items-center gap-3 transition-all ${method === m.id ? 'border-purple-500 bg-purple-50' : 'border-gray-100'}`}>
+              <div style={{ background: m.color, width: 40, height: 40 }} className="rounded-full flex items-center justify-center text-white font-bold">{m.icon}</div>
+              <span className="text-sm font-medium text-gray-700">{m.name}</span>
+              {method === m.id && <span className="ml-auto text-purple-600">✓</span>}
+            </button>
+          ))}
+        </div>
+      </Card>
+
+      <Card className="mb-4">
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between"><span className="text-gray-500">Sous-total</span><span>{booking.price.toLocaleString()} F</span></div>
+          {promoApplied && <div className="flex justify-between text-green-600"><span>Reduction</span><span>-{(booking.price - total).toLocaleString()} F</span></div>}
+          <div className="flex justify-between pt-2 border-t font-bold text-lg"><span>Total</span><span className="gradient-text">{Math.round(total).toLocaleString()} F</span></div>
+        </div>
+      </Card>
+
+      <Button onClick={handlePay} disabled={!method || processing} size="lg" className="w-full">
+        {processing ? 'Traitement...' : 'Payer ' + Math.round(total).toLocaleString() + ' F'}
+      </Button>
+      <p className="text-xs text-gray-400 text-center mt-3">Mode test - Aucun paiement reel ne sera effectue</p>
+    </div>
+  );
+}
+
+/* ====== PROVIDERS LIST ====== */
+function Providers({ navigate }) {
+  return (
+    <div className="max-w-6xl mx-auto px-4 py-6 fade-in">
+      <h1 className="text-2xl font-bold text-gray-800 mb-4">Nos prestataires</h1>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {PROVIDERS.map(p => (
+          <Card key={p.id} onClick={() => navigate('/provider/' + p.id)} className="cursor-pointer">
+            <div className="flex items-start gap-3">
+              <Avatar name={p.name} size={52} />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1">
+                  <h3 className="font-semibold text-gray-800 truncate">{p.name}</h3>
+                  {p.verified && <Badge color="purple">Verifie</Badge>}
+                </div>
+                <div className="flex items-center gap-1 mt-1">
+                  <StarRating rating={p.rating} size={12} />
+                  <span className="text-xs text-gray-500">{p.rating} ({p.reviews})</span>
+                </div>
+                <p className="text-xs text-gray-400 mt-1">{p.location}</p>
+                <Badge color="pink">{CATEGORIES.find(c => c.id === p.category).name}</Badge>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ====== LOGIN ====== */
+function Login({ navigate, setCurrentUser }) {
+  const [email, setEmail] = useState('');
+  const [role, setRole] = useState('client');
+  const handleLogin = () => {
+    const name = role === 'admin' ? 'Admin NESYA' : role === 'provider' ? 'Awa Kone' : 'Jean Kouassi';
+    setCurrentUser({ name, email, role, id: role === 'provider' ? 'p1' : role === 'admin' ? 'admin' : 'u1' });
+    navigate('/');
+  };
+  return (
+    <div className="max-w-md mx-auto px-4 py-8 fade-in">
+      <div className="text-center mb-6">
+        <Logo size={56} />
+        <h1 className="text-2xl font-bold mt-3 gradient-text">Connexion</h1>
+      </div>
+      <Card>
+        <Input label="Email" type="email" placeholder="votre@email.com" value={email} onChange={e => setEmail(e.target.value)} />
+        <Input label="Mot de passe" type="password" placeholder="********" />
+        <Select label="Connexion en tant que" value={role} onChange={e => setRole(e.target.value)}>
+          <option value="client">Client</option>
+          <option value="provider">Prestataire</option>
+          <option value="admin">Administrateur</option>
+        </Select>
+        <Button onClick={handleLogin} className="w-full mt-2" size="lg">Se connecter</Button>
+        <p className="text-center text-sm text-gray-500 mt-4">Pas encore de compte ? <button onClick={() => navigate('/register')} className="text-purple-600 font-medium">Inscrivez-vous</button></p>
+        <p className="text-xs text-gray-400 text-center mt-3">Donnees fictives - Aucune authentification reelle</p>
+      </Card>
+    </div>
+  );
+}
+
+/* ====== REGISTER ====== */
+function Register({ navigate, setCurrentUser }) {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [role, setRole] = useState('client');
+  const handleRegister = () => {
+    setCurrentUser({ name: name || 'Nouvel utilisateur', email, role, id: 'new' });
+    navigate('/');
+  };
+  return (
+    <div className="max-w-md mx-auto px-4 py-8 fade-in">
+      <div className="text-center mb-6">
+        <Logo size={56} />
+        <h1 className="text-2xl font-bold mt-3 gradient-text">Inscription</h1>
+      </div>
+      <Card>
+        <Input label="Nom complet" placeholder="Jean Kouassi" value={name} onChange={e => setName(e.target.value)} />
+        <Input label="Email" type="email" placeholder="votre@email.com" value={email} onChange={e => setEmail(e.target.value)} />
+        <Input label="Telephone" placeholder="+225 07 00 00 00 00" />
+        <Select label="Je m inscris en tant que" value={role} onChange={e => setRole(e.target.value)}>
+          <option value="client">Client</option>
+          <option value="provider">Prestataire (professionnel de la beaute)</option>
+        </Select>
+        <div className="flex items-start gap-2 mt-3">
+          <input type="checkbox" id="terms" className="mt-1" />
+          <label htmlFor="terms" className="text-xs text-gray-500">J accepte les conditions d utilisation. Age minimum 16 ans.</label>
+        </div>
+        <Button onClick={handleRegister} className="w-full mt-2" size="lg">Creer mon compte</Button>
+        <p className="text-center text-sm text-gray-500 mt-4">Deja inscrit ? <button onClick={() => navigate('/login')} className="text-purple-600 font-medium">Connectez-vous</button></p>
+      </Card>
+    </div>
+  );
+}
+
+/* ====== PROFILE ====== */
+function Profile({ navigate, currentUser, setCurrentUser }) {
+  if (!currentUser) {
+    return <div className="max-w-md mx-auto px-4 py-20 text-center">
+      <p className="text-gray-500">Connectez-vous pour voir votre profil</p>
+      <Button onClick={() => navigate('/login')} className="mt-4">Connexion</Button>
+    </div>;
+  }
+  return (
+    <div className="max-w-md mx-auto px-4 py-6 fade-in">
+      <h1 className="text-2xl font-bold text-gray-800 mb-5">Mon profil</h1>
+      <Card className="mb-4 text-center">
+        <div className="flex justify-center"><Avatar name={currentUser.name} size={80} /></div>
+        <h2 className="font-bold text-gray-800 mt-3">{currentUser.name}</h2>
+        <Badge color={currentUser.role === 'admin' ? 'red' : currentUser.role === 'provider' ? 'purple' : 'blue'}>
+          {currentUser.role === 'admin' ? 'Administrateur' : currentUser.role === 'provider' ? 'Prestataire' : 'Client'}
+        </Badge>
+      </Card>
+      <Card className="mb-4">
+        <h3 className="font-semibold text-gray-800 mb-3">Informations</h3>
+        <div className="space-y-3 text-sm">
+          <div className="flex justify-between"><span className="text-gray-500">Email</span><span>{currentUser.email || 'non renseigne'}</span></div>
+          <div className="flex justify-between"><span className="text-gray-500">Role</span><span>{currentUser.role}</span></div>
+        </div>
+      </Card>
+      <Button variant="danger" onClick={() => { setCurrentUser(null); navigate('/'); }} className="w-full">Deconnexion</Button>
+    </div>
+  );
+}
+
+/* ====== PROVIDER DASHBOARD ====== */
+function ProviderDashboard({ navigate, currentUser }) {
+  if (!currentUser || currentUser.role !== 'provider') {
+    return <div className="max-w-md mx-auto px-4 py-20 text-center">
+      <p className="text-gray-500">Acces reserve aux prestataires</p>
+      <Button onClick={() => navigate('/login')} className="mt-4">Connexion prestataire</Button>
+    </div>;
+  }
+  const [tab, setTab] = useState('overview');
+  const tabs = [{ id: 'overview', label: 'Apercu' }, { id: 'services', label: 'Services' }, { id: 'bookings', label: 'Reservations' }, { id: 'subscription', label: 'Abonnement' }];
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-6 fade-in">
+      <div className="flex items-center justify-between mb-5">
+        <h1 className="text-2xl font-bold text-gray-800">Espace prestataire</h1>
+        <Badge color="green">Abonnement actif</Badge>
+      </div>
+      <div className="flex gap-2 overflow-x-auto mb-5 pb-2">
+        {tabs.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium ${tab === t.id ? 'gradient-brand text-white' : 'bg-gray-100 text-gray-600'}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'overview' && (
+        <>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+            {[{ l: 'Reservations ce mois', v: '23', i: '📅' }, { l: 'Revenu du mois', v: '115 000 F', i: '💰' }, { l: 'Note moyenne', v: '4.9', i: '⭐' }, { l: 'Clients satisfaits', v: '127', i: '😊' }].map(s => (
+              <Card key={s.l}>
+                <div className="text-2xl mb-1">{s.i}</div>
+                <p className="text-xs text-gray-400">{s.l}</p>
+                <p className="text-lg font-bold text-gray-800">{s.v}</p>
+              </Card>
+            ))}
+          </div>
+          <Card>
+            <h3 className="font-semibold text-gray-800 mb-3">Reservations recentes</h3>
+            {MOCK_BOOKINGS.slice(0, 3).map(b => (
+              <div key={b.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl mb-2">
+                <div>
+                  <p className="text-sm font-medium text-gray-700">{b.service}</p>
+                  <p className="text-xs text-gray-400">{b.date} a {b.time}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge color={b.status === 'confirmee' ? 'green' : b.status === 'realisee' ? 'blue' : 'red'}>{b.status}</Badge>
+                  <span className="text-sm font-bold">{b.price.toLocaleString()} F</span>
+                </div>
+              </div>
+            ))}
+          </Card>
+        </>
+      )}
+
+      {tab === 'services' && (
+        <Card>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold text-gray-800">Mes services</h3>
+            <Button size="sm">+ Ajouter</Button>
+          </div>
+          {PROVIDERS[0].services.map(s => (
+            <div key={s} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl mb-2">
+              <div>
+                <p className="text-sm font-medium text-gray-700">{s}</p>
+                <p className="text-xs text-gray-400">1h - A domicile / Atelier</p>
+              </div>
+              <span className="text-sm font-bold gradient-text">5 000 F</span>
+            </div>
+          ))}
+        </Card>
+      )}
+
+      {tab === 'bookings' && (
+        <Card>
+          <h3 className="font-semibold text-gray-800 mb-3">Reservations</h3>
+          {MOCK_BOOKINGS.map(b => (
+            <div key={b.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl mb-2">
+              <div>
+                <p className="text-sm font-medium text-gray-700">{b.service}</p>
+                <p className="text-xs text-gray-400">{b.date} a {b.time} - {b.location}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge color={b.status === 'confirmee' ? 'green' : b.status === 'realisee' ? 'blue' : 'red'}>{b.status}</Badge>
+                <span className="text-sm font-bold">{b.price.toLocaleString()} F</span>
+              </div>
+            </div>
+          ))}
+        </Card>
+      )}
+
+      {tab === 'subscription' && (
+        <>
+          <Card className="mb-4 gradient-brand text-white">
+            <h3 className="font-bold text-lg mb-1">Abonnement NESYA</h3>
+            <p className="text-3xl font-bold">2 000 F</p>
+            <p className="text-sm opacity-80">par mois</p>
+            <div className="mt-3 space-y-1 text-sm">
+              <p>✓ Visibilite sur la plateforme</p>
+              <p>✓ Gestion des disponibilites</p>
+              <p>✓ Suivi des paiements</p>
+              <p>✓ Support dedie</p>
+            </div>
+          </Card>
+          <Card>
+            <h3 className="font-semibold text-gray-800 mb-3">Historique des paiements</h3>
+            {[{ date: '15 Sep 2026', amount: 2000, status: 'Paye' }, { date: '15 Aou 2026', amount: 2000, status: 'Paye' }, { date: '15 Jul 2026', amount: 0, status: 'Gratuit' }].map(p => (
+              <div key={p.date} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                <span className="text-sm text-gray-600">{p.date}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">{p.amount > 0 ? p.amount.toLocaleString() + ' F' : 'Gratuit'}</span>
+                  <Badge color={p.status === 'Paye' ? 'green' : 'blue'}>{p.status}</Badge>
+                </div>
+              </div>
+            ))}
+          </Card>
+        </>
       )}
     </div>
   );
 }
-  </script>
-  <script type="text/babel">
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(React.createElement(App));
-  </script>
+
+/* ====== ADMIN ====== */
+function Admin({ navigate, currentUser }) {
+  if (!currentUser || currentUser.role !== 'admin') {
+    return <div className="max-w-md mx-auto px-4 py-20 text-center">
+      <p className="text-gray-500">Acces reserve aux administrateurs</p>
+      <Button onClick={() => navigate('/login')} className="mt-4">Connexion admin</Button>
+    </div>;
+  }
+  const [tab, setTab] = useState('dashboard');
+  const tabs = [{ id: 'dashboard', label: 'Tableau de bord' }, { id: 'providers', label: 'Prestataires' }, { id: 'promos', label: 'Codes promo' }, { id: 'subscriptions', label: 'Abonnements' }];
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-6 fade-in">
+      <h1 className="text-2xl font-bold text-gray-800 mb-5">Administration NESYA</h1>
+      <div className="flex gap-2 overflow-x-auto mb-5 pb-2">
+        {tabs.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium ${tab === t.id ? 'gradient-brand text-white' : 'bg-gray-100 text-gray-600'}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'dashboard' && (
+        <>
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+            {[{ l: 'Clients', v: STATS.totalClients, i: '👥' }, { l: 'Prestataires', v: STATS.totalProviders, i: '💅' },
+              { l: 'Reservations', v: STATS.totalBookings, i: '📅' }, { l: 'Revenu total', v: (STATS.totalRevenue / 1000000).toFixed(1) + 'M F', i: '💰' },
+              { l: 'Abonnements actifs', v: STATS.activeSubscriptions, i: '✅' }, { l: 'Paiements en attente', v: STATS.pendingPayments, i: '⏳' }
+            ].map(s => (
+              <Card key={s.l}>
+                <div className="text-2xl mb-1">{s.i}</div>
+                <p className="text-xs text-gray-400">{s.l}</p>
+                <p className="text-lg font-bold text-gray-800">{s.v}</p>
+              </Card>
+            ))}
+          </div>
+          <Card>
+            <h3 className="font-semibold text-gray-800 mb-3">Dernieres reservations</h3>
+            {MOCK_BOOKINGS.map(b => (
+              <div key={b.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                <span className="text-sm text-gray-500">{b.id}</span>
+                <span className="text-sm font-medium">{b.service}</span>
+                <span className="text-sm">{b.price.toLocaleString()} F</span>
+                <Badge color={b.status === 'confirmee' ? 'green' : b.status === 'realisee' ? 'blue' : 'red'}>{b.status}</Badge>
+              </div>
+            ))}
+          </Card>
+        </>
+      )}
+
+      {tab === 'providers' && (
+        <Card>
+          <h3 className="font-semibold text-gray-800 mb-3">Prestataires inscrits</h3>
+          {PROVIDERS.map(p => (
+            <div key={p.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl mb-2">
+              <div className="flex items-center gap-3">
+                <Avatar name={p.name} size={40} />
+                <div>
+                  <p className="text-sm font-medium text-gray-700">{p.name}</p>
+                  <p className="text-xs text-gray-400">{p.location}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {p.verified ? <Badge color="green">Verifie</Badge> : <Badge color="yellow">En attente</Badge>}
+                <Badge color="purple">{CATEGORIES.find(c => c.id === p.category).name}</Badge>
+              </div>
+            </div>
+          ))}
+        </Card>
+      )}
+
+      {tab === 'promos' && (
+        <Card>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold text-gray-800">Codes promo</h3>
+            <Button size="sm">+ Creer</Button>
+          </div>
+          {PROMO_CODES.map(p => (
+            <div key={p.code} className="p-3 bg-gray-50 rounded-xl mb-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-purple-600">{p.code}</span>
+                    <Badge color={p.active ? 'green' : 'gray'}>{p.active ? 'Actif' : 'Inactif'}</Badge>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">{p.description}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-bold">{p.type === 'percent' ? '-' + p.value + '%' : '-' + p.value.toLocaleString() + ' F'}</p>
+                  <p className="text-xs text-gray-400">{p.uses}/{p.maxUses} utilisations</p>
+                </div>
+              </div>
+              <p className="text-xs text-gray-400 mt-1">Expire le {p.expires}</p>
+            </div>
+          ))}
+        </Card>
+      )}
+
+      {tab === 'subscriptions' && (
+        <>
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="bg-green-50 rounded-xl p-4 text-center">
+              <p className="text-2xl font-bold text-green-600">{STATS.activeSubscriptions}</p>
+              <p className="text-xs text-gray-500">Actifs</p>
+            </div>
+            <div className="bg-red-50 rounded-xl p-4 text-center">
+              <p className="text-2xl font-bold text-red-600">{STATS.totalProviders - STATS.activeSubscriptions}</p>
+              <p className="text-xs text-gray-500">Inactifs / Expirés</p>
+            </div>
+          </div>
+          <Card>
+            <h3 className="font-semibold text-gray-800 mb-3">Abonnements prestataires</h3>
+            {PROVIDERS.slice(0, 5).map((p, i) => (
+              <div key={p.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl mb-2">
+                <div className="flex items-center gap-3">
+                  <Avatar name={p.name} size={36} />
+                  <span className="text-sm font-medium">{p.name}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-400">2 000 F/mois</span>
+                  <Badge color={i % 3 === 0 ? 'red' : 'green'}>{i % 3 === 0 ? 'Expiré' : 'Actif'}</Badge>
+                </div>
+              </div>
+            ))}
+          </Card>
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ====== ABOUT ====== */
+function About() {
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-8 fade-in">
+      <div className="text-center mb-8">
+        <Logo size={56} />
+        <h1 className="text-3xl font-bold gradient-text mt-3">NESYA</h1>
+        <p className="text-lg text-gray-500">La beaute, simplement connectee</p>
+      </div>
+      <Card className="mb-4">
+        <h2 className="font-bold text-gray-800 mb-2">Notre mission</h2>
+        <p className="text-gray-600 text-sm">NESYA relie des clients recherchant des services de beaute a des professionnels disponibles pour les realiser. Le coeur du service: besoin, recherche, disponibilite, reservation, realisation, paiement, historique.</p>
+      </Card>
+      <Card className="mb-4">
+        <h2 className="font-bold text-gray-800 mb-2">Comment ca marche</h2>
+        <div className="space-y-2 text-sm text-gray-600">
+          <p>1. Recherchez un service de beaute pres de chez vous</p>
+          <p>2. Choisissez un prestataire et un creneau</p>
+          <p>3. Reservez - a domicile ou en atelier</p>
+          <p>4. Le prestataire realise la prestation</p>
+          <p>5. Vous payez une fois la prestation terminee (Wave, Orange Money, MTN, Moov, bancaire)</p>
+        </div>
+      </Card>
+      <Card className="mb-4">
+        <h2 className="font-bold text-gray-800 mb-2">Pour les prestataires</h2>
+        <p className="text-gray-600 text-sm">Abonnement de 2 000 FCFA/mois apres un mois gratuit. Offre de lancement: 100 premiers prestataires beneficient d un mois gratuit avec 10% sur chaque prestation realisee.</p>
+      </Card>
+      <Card>
+        <p className="text-xs text-gray-400 text-center">NESYA - Plateforme de reservation de services de beaute en Cote d Ivoire. Donnees fictives pour demonstration. Paiements en mode test.</p>
+      </Card>
+    </div>
+  );
+}
+
+/* ====== HELP ====== */
+function Help() {
+  const faqs = [
+    { q: 'Comment reserver un service ?', a: 'Recherchez un service ou un prestataire, choisissez un creneau, selectionnez le lieu (domicile ou atelier) et confirmez votre reservation.' },
+    { q: 'Quand dois-je payer ?', a: 'Le paiement se fait APRES la realisation de la prestation. Vous pouvez payer via Wave, Orange Money, MTN Money, Moov Money ou compte bancaire.' },
+    { q: 'Comment devenir prestataire ?', a: 'Inscrivez-vous en tant que prestataire. Les 100 premiers beneficient d un mois gratuit avec 10% sur chaque prestation. Apres cela, l abonnement est de 2 000 FCFA/mois.' },
+    { q: 'Puis-je annuler une reservation ?', a: 'Oui, mais l annulation n est plus possible apres le debut du deplacement du prestataire. Une reprogrammation est autorisee maximum deux fois.' },
+    { q: 'Quels services sont disponibles ?', a: 'Manucure, pedicure, coiffure, maquillage, soins du visage, epilation, cils et sourcils, massage et spa. De nouvelles categories seront ajoutees progressivement.' },
+    { q: 'Les prestataires sont-ils verifies ?', a: 'Oui, NESYA verifie l identite des prestataires. Le badge Verifie indique que le prestataire a complete le processus de verification.' }
+  ];
+  return (
+    <div className="max-w-2xl mx-auto px-4 py-8 fade-in">
+      <h1 className="text-2xl font-bold text-gray-800 mb-5">Aide & FAQ</h1>
+      <div className="space-y-3">
+        {faqs.map((f, i) => (
+          <Card key={i}>
+            <h3 className="font-semibold text-gray-800 mb-1">{f.q}</h3>
+            <p className="text-sm text-gray-500">{f.a}</p>
+          </Card>
+        ))}
+      </div>
+      <Card className="mt-4 text-center gradient-brand text-white">
+        <h3 className="font-bold mb-1">Besoin d aide supplementaire ?</h3>
+        <p className="text-sm opacity-90 mb-3">Contactez notre equipe support</p>
+        <Button variant="gold">Contacter le support</Button>
+      </Card>
+    </div>
+  );
+}
+
+/* ====== APP ====== */
+function App() {
+  const { route, navigate } = useRouter();
+  const [currentUser, setCurrentUser] = useState(null);
+
+  const renderPage = () => {
+    const bottome = route.split('?')[0];
+    if (bottome === '/' || bottome === '') return <Home navigate={navigate} />;
+    if (bottome.startsWith('/services')) return <Services navigate={navigate} route={route} />;
+    if (bottome.startsWith('/provider/')) return <ProviderDetail navigate={navigate} route={route} currentUser={currentUser} />;
+    if (bottome.startsWith('/providers')) return <Providers navigate={navigate} />;
+    if (bottome.startsWith('/bookings')) return <Bookings navigate={navigate} currentUser={currentUser} />;
+    if (bottome.startsWith('/payment/')) return <Payment navigate={navigate} route={route} />;
+    if (bottome.startsWith('/login')) return <Login navigate={navigate} setCurrentUser={setCurrentUser} />;
+    if (bottome.startsWith('/register')) return <Register navigate={navigate} setCurrentUser={setCurrentUser} />;
+    if (bottome.startsWith('/profile')) return <Profile navigate={navigate} currentUser={currentUser} setCurrentUser={setCurrentUser} />;
+    if (bottome.startsWith('/provider-dashboard')) return <ProviderDashboard navigate={navigate} currentUser={currentUser} />;
+    if (bottome.startsWith('/admin')) return <Admin navigate={navigate} currentUser={currentUser} />;
+    if (bottome.startsWith('/about')) return <About />;
+    if (bottome.startsWith('/help')) return <Help />;
+    return (
+      <div className="max-w-md mx-auto px-4 py-20 text-center">
+        <div className="text-5xl mb-3 opacity-30">🔍</div>
+        <h1 className="text-xl font-bold text-gray-800">Page introuvable</h1>
+        <Button onClick={() => navigate('/')} className="mt-4">Accueil</Button>
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <Navbar route={route.split('?')[0]} navigate={navigate} currentUser={currentUser} setCurrentUser={setCurrentUser} />
+      <main className="flex-1">{renderPage()}</main>
+      <Footer navigate={navigate} />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
 </body>
 </html>
